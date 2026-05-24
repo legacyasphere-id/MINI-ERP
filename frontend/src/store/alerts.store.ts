@@ -16,7 +16,7 @@ export const useAlertsStore = create<AlertsState>((set, get) => ({
     set((state) => ({
       alerts: state.alerts.map((a) =>
         a.id === id
-          ? { ...a, isAcknowledged: true, acknowledgedBy: operatorId }
+          ? { ...a, isAcknowledged: true, acknowledgedBy: operatorId, acknowledgedAt: new Date().toISOString() }
           : a
       ),
     })),

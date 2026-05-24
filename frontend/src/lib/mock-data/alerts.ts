@@ -11,6 +11,7 @@ export const ALERTS: Alert[] = [
     timestamp: '2026-05-24T06:12:00Z',
     isAcknowledged: false,
     acknowledgedBy: null,
+    acknowledgedAt: null,
   },
   {
     id: 'alr-002',
@@ -22,6 +23,7 @@ export const ALERTS: Alert[] = [
     timestamp: '2026-05-24T04:55:00Z',
     isAcknowledged: false,
     acknowledgedBy: null,
+    acknowledgedAt: null,
   },
   {
     id: 'alr-003',
@@ -33,6 +35,7 @@ export const ALERTS: Alert[] = [
     timestamp: '2026-05-24T00:00:00Z',
     isAcknowledged: false,
     acknowledgedBy: null,
+    acknowledgedAt: null,
   },
   {
     id: 'alr-004',
@@ -44,6 +47,7 @@ export const ALERTS: Alert[] = [
     timestamp: '2026-05-23T15:40:00Z',
     isAcknowledged: false,
     acknowledgedBy: null,
+    acknowledgedAt: null,
   },
   {
     id: 'alr-005',
@@ -55,6 +59,7 @@ export const ALERTS: Alert[] = [
     timestamp: '2026-05-23T14:20:00Z',
     isAcknowledged: false,
     acknowledgedBy: null,
+    acknowledgedAt: null,
   },
   {
     id: 'alr-006',
@@ -66,6 +71,7 @@ export const ALERTS: Alert[] = [
     timestamp: '2026-05-23T12:35:00Z',
     isAcknowledged: false,
     acknowledgedBy: null,
+    acknowledgedAt: null,
   },
   {
     id: 'alr-007',
@@ -77,6 +83,7 @@ export const ALERTS: Alert[] = [
     timestamp: '2026-05-24T07:00:00Z',
     isAcknowledged: false,
     acknowledgedBy: null,
+    acknowledgedAt: null,
   },
   {
     id: 'alr-008',
@@ -88,5 +95,6 @@ export const ALERTS: Alert[] = [
     timestamp: '2026-05-24T08:15:00Z',
     isAcknowledged: true,
     acknowledgedBy: 'op-jones',
+    acknowledgedAt: '2026-05-24T09:30:00Z',
   },
 ];

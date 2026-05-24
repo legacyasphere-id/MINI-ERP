@@ -59,6 +59,7 @@ export interface Alert {
   timestamp: string;
   isAcknowledged: boolean;
   acknowledgedBy: string | null;
+  acknowledgedAt: string | null;
 }
 
 export interface Supplier {
