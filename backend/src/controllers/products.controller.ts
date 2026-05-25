@@ -1,6 +1,24 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../services/prisma.service';
 import { movementsService } from '../services/movements.service';
+import { productsService } from '../services/products.service';
+
+export const getProducts = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const result = await productsService.findAll({
+      page:     Number(req.query.page)  || 1,
+      limit:    Math.min(Number(req.query.limit) || 20, 100),
+      search:   typeof req.query.search   === 'string' ? req.query.search   : undefined,
+      category: typeof req.query.category === 'string' ? req.query.category : undefined,
+      status:   typeof req.query.status   === 'string' ? req.query.status   : undefined,
+      sortKey:  typeof req.query.sortKey  === 'string' ? req.query.sortKey  : undefined,
+      sortDir:  typeof req.query.sortDir  === 'string' ? req.query.sortDir  : undefined,
+    });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+};
 
 export const getProduct = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {

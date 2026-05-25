@@ -1,73 +1,113 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { STOCK_ITEMS } from '@/lib/mock-data';
+import { productsApi, type ApiProduct } from '@/services/products.service';
+import { INVENTORY_CATEGORIES } from '@/lib/constants';
 import type { StockStatus, StockItem } from '@/types/inventory.types';
 import { StockFilters } from '@/components/features/inventory/StockFilters';
 import { StockTable, type SortKey, type SortDir } from '@/components/features/inventory/StockTable';
+import { cn } from '@/lib/cn';
 
-const CATEGORIES = [...new Set(STOCK_ITEMS.map((i) => i.category))].sort();
+const LIMIT = 20;
 
-const STATUS_ORDER: Record<string, number> = { critical: 0, low: 1, ok: 2, overstock: 3 };
+function toStockItem(p: ApiProduct): StockItem {
+  return {
+    id:           p.id,
+    sku:          p.sku,
+    name:         p.name,
+    category:     p.category?.name ?? 'Uncategorized',
+    location:     { zone: p.locationZone, rack: p.locationRack, bin: p.locationBin },
+    currentQty:   p.currentQty,
+    minQty:       p.minQty,
+    maxQty:       p.maxQty,
+    unit:         p.unit,
+    status:       p.status,
+    lastMovement: p.updatedAt,
+    supplierId:   '',
+  };
+}
 
 export function InventoryPage() {
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StockStatus | 'all'>('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [sortKey, setSortKey] = useState<SortKey>('status');
-  const [sortDir, setSortDir] = useState<SortDir>('asc');
   const navigate = useNavigate();
 
-  // 200ms debounce on search
+  const [search, setSearch]               = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [statusFilter, setStatusFilter]   = useState<StockStatus | 'all'>('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [sortKey, setSortKey]             = useState<SortKey>('status');
+  const [sortDir, setSortDir]             = useState<SortDir>('asc');
+  const [page, setPage]                   = useState(1);
+
+  const [items, setItems]       = useState<StockItem[]>([]);
+  const [total, setTotal]       = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState(false);
+
+  // Debounce search 300ms
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 200);
+    const t = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 300);
     return () => clearTimeout(t);
   }, [search]);
 
-  const filtered = useMemo(() => {
-    let items = STOCK_ITEMS;
+  // Reset page when filters change
+  useEffect(() => { setPage(1); }, [statusFilter, categoryFilter, sortKey, sortDir]);
 
-    if (debouncedSearch) {
-      const q = debouncedSearch.toLowerCase();
-      items = items.filter(
-        (i) => i.sku.toLowerCase().includes(q) || i.name.toLowerCase().includes(q)
-      );
-    }
-    if (statusFilter !== 'all') {
-      items = items.filter((i) => i.status === statusFilter);
-    }
-    if (categoryFilter !== 'all') {
-      items = items.filter((i) => i.category === categoryFilter);
-    }
+  const fetchRef = useRef(0);
 
-    return [...items].sort((a, b) => {
-      let cmp = 0;
-      switch (sortKey) {
-        case 'sku':        cmp = a.sku.localeCompare(b.sku);                            break;
-        case 'name':       cmp = a.name.localeCompare(b.name);                          break;
-        case 'category':   cmp = a.category.localeCompare(b.category);                  break;
-        case 'currentQty': cmp = a.currentQty - b.currentQty;                           break;
-        case 'status':     cmp = (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9); break;
-      }
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-  }, [debouncedSearch, statusFilter, categoryFilter, sortKey, sortDir]);
-
-  const handleSort = (key: SortKey) => {
-    if (key === sortKey) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortKey(key);
-      setSortDir('asc');
+  const fetchProducts = useCallback(async () => {
+    const token = ++fetchRef.current;
+    setLoading(true);
+    setError(false);
+    try {
+      const res = await productsApi.list({
+        page,
+        limit:    LIMIT,
+        search:   debouncedSearch || undefined,
+        category: categoryFilter !== 'all' ? categoryFilter : undefined,
+        status:   statusFilter   !== 'all' ? statusFilter   : undefined,
+        sortKey,
+        sortDir,
+      });
+      if (token !== fetchRef.current) return; // stale
+      setItems(res.data.data.map(toStockItem));
+      setTotal(res.data.total);
+      setTotalPages(res.data.totalPages);
+    } catch {
+      if (token !== fetchRef.current) return;
+      setError(true);
+    } finally {
+      if (token === fetchRef.current) setLoading(false);
     }
-  };
+  }, [page, debouncedSearch, statusFilter, categoryFilter, sortKey, sortDir]);
+
+  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+
+  // Refetch on tab focus (keeps qty in sync after movements)
+  useEffect(() => {
+    function handleVisibility() {
+      if (document.visibilityState === 'visible') fetchProducts();
+    }
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [fetchProducts]);
+
+  function handleSort(key: SortKey) {
+    if (key === sortKey) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else { setSortKey(key); setSortDir('asc'); }
+  }
+
+  const subtitle = loading
+    ? 'Loading…'
+    : error
+    ? 'Could not load inventory — is the backend running?'
+    : `${total} SKU${total !== 1 ? 's' : ''} across ${INVENTORY_CATEGORIES.length} categories`;
 
   return (
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="heading">Stock List</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          {STOCK_ITEMS.length} SKUs across {CATEGORIES.length} categories — search, filter, sort.
+        <p className={cn('mt-1 text-sm', error ? 'text-status-error' : 'text-ink-muted')}>
+          {subtitle}
         </p>
       </div>
 
@@ -78,18 +118,61 @@ export function InventoryPage() {
         onStatus={setStatusFilter}
         category={categoryFilter}
         onCategory={setCategoryFilter}
-        categories={CATEGORIES}
-        totalCount={STOCK_ITEMS.length}
-        filteredCount={filtered.length}
+        categories={[...INVENTORY_CATEGORIES]}
+        totalCount={total}
+        filteredCount={items.length}
       />
 
-      <StockTable
-        items={filtered}
-        sortKey={sortKey}
-        sortDir={sortDir}
-        onSort={handleSort}
-        onRowClick={(item: StockItem) => navigate(`/inventory/${item.id}`)}
-      />
+      {loading && items.length === 0 ? (
+        <div className="rounded border border-stroke bg-surface-card px-4 py-10 text-center">
+          <p className="text-sm text-ink-muted">Loading inventory…</p>
+        </div>
+      ) : (
+        <>
+          <StockTable
+            items={items}
+            sortKey={sortKey}
+            sortDir={sortDir}
+            onSort={handleSort}
+            onRowClick={(item: StockItem) => navigate(`/inventory/${item.id}`)}
+          />
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-xs text-ink-muted tabular-nums">
+                Page {page} of {totalPages} · {total} total
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className={cn(
+                    'h-input px-3 rounded border border-stroke text-xs transition-colors duration-fast',
+                    page <= 1
+                      ? 'text-ink-muted/40 cursor-not-allowed'
+                      : 'text-ink-dim hover:bg-surface-hover hover:text-ink'
+                  )}
+                >
+                  ← Prev
+                </button>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                  className={cn(
+                    'h-input px-3 rounded border border-stroke text-xs transition-colors duration-fast',
+                    page >= totalPages
+                      ? 'text-ink-muted/40 cursor-not-allowed'
+                      : 'text-ink-dim hover:bg-surface-hover hover:text-ink'
+                  )}
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
