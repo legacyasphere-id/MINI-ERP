@@ -7,7 +7,11 @@ import { useAlertsStore } from '@/store/alerts.store';
 
 export function AppShell() {
   const acknowledge = useAlertsStore((s) => s.acknowledge);
-  const topAlert = useAlertsStore((s) => s.topCritical());
+  const topAlert    = useAlertsStore((s) => s.topCritical());
+  const hydrate     = useAlertsStore((s) => s.hydrate);
+
+  // Hydrate alerts from API on mount — keeps sidebar badge accurate
+  useEffect(() => { hydrate(); }, [hydrate]);
 
   // [A] acknowledges the top alert
   useEffect(() => {
