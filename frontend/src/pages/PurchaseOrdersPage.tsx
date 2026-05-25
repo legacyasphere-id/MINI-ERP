@@ -1,17 +1,15 @@
 import { useState, useMemo, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { PURCHASE_ORDERS, SUPPLIERS, STOCK_ITEMS } from '@/lib/mock-data';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { fmtShortDate } from '@/lib/dates';
 import { formatCurrency } from '@/lib/formatters';
 import { cn } from '@/lib/cn';
 import type { PurchaseOrder, POStatus } from '@/types/inventory.types';
 
-// ─── indexes ────────────────────────────────────────────────────────────────
-
 const SUPPLIER_IDX = Object.fromEntries(SUPPLIERS.map((s) => [s.id, s]));
 const ITEM_IDX = Object.fromEntries(STOCK_ITEMS.map((i) => [i.id, i]));
-
-// ─── constants ──────────────────────────────────────────────────────────────
 
 const STATUS_CFG: Record<POStatus, { label: string; cls: string; bg: string }> = {
   draft:     { label: 'Draft',     cls: 'text-ink-muted',    bg: 'bg-surface-hover'  },
@@ -59,7 +57,6 @@ function ReceiveDrawer({ po, open, onClose, onConfirm }: DrawerProps) {
   const [qtys, setQtys] = useState<Record<string, number>>({});
   const [locs, setLocs] = useState<Record<string, string>>({});
 
-  // Reset inputs whenever the displayed PO changes
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!po) return;
@@ -75,7 +72,7 @@ function ReceiveDrawer({ po, open, onClose, onConfirm }: DrawerProps) {
         })
       )
     );
-  }, [po?.id]); // intentionally depends only on ID
+  }, [po?.id]);
 
   if (!po) return null;
 
@@ -127,12 +124,9 @@ function ReceiveDrawer({ po, open, onClose, onConfirm }: DrawerProps) {
               &nbsp;·&nbsp;{formatCurrency(po.totalValue)}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded p-1 text-ink-muted hover:bg-surface-hover transition-colors duration-fast"
-          >
+          <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
 
         {/* Line items */}
@@ -154,7 +148,6 @@ function ReceiveDrawer({ po, open, onClose, onConfirm }: DrawerProps) {
                     : 'border-stroke bg-surface-base'
                 )}
               >
-                {/* Item header */}
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div>
                     {item && <span className="sku">{item.sku}</span>}
@@ -167,41 +160,23 @@ function ReceiveDrawer({ po, open, onClose, onConfirm }: DrawerProps) {
                   )}
                 </div>
 
-                {/* Progress summary */}
                 <div className="mb-3 flex gap-4 text-xs text-ink-muted">
-                  <span>
-                    Ordered:{' '}
-                    <span className="tabular-nums text-ink">{poItem.orderedQty}</span>
-                  </span>
-                  <span>
-                    Received:{' '}
-                    <span className="tabular-nums text-ink">{poItem.receivedQty}</span>
-                  </span>
+                  <span>Ordered: <span className="tabular-nums text-ink">{poItem.orderedQty}</span></span>
+                  <span>Received: <span className="tabular-nums text-ink">{poItem.receivedQty}</span></span>
                   <span>
                     Remaining:{' '}
-                    <span
-                      className={cn(
-                        'tabular-nums font-semibold',
-                        remaining > 0 ? 'text-accent-gold' : 'text-status-ok'
-                      )}
-                    >
+                    <span className={cn('tabular-nums font-semibold', remaining > 0 ? 'text-accent-gold' : 'text-status-ok')}>
                       {remaining}
                     </span>
                   </span>
-                  <span>
-                    Unit cost:{' '}
-                    <span className="tabular-nums text-ink">
-                      {formatCurrency(poItem.unitCost)}
-                    </span>
-                  </span>
+                  <span>Unit cost: <span className="tabular-nums text-ink">{formatCurrency(poItem.unitCost)}</span></span>
                 </div>
 
-                {/* Receive inputs — only when receivable and not complete */}
                 {receivable && !complete && (
                   <div className="flex items-center gap-2">
                     <div className="flex flex-col gap-0.5">
                       <span className="label-caps text-ink-muted">Receive now</span>
-                      <input
+                      <Input
                         type="number"
                         min={0}
                         max={remaining}
@@ -217,27 +192,18 @@ function ReceiveDrawer({ po, open, onClose, onConfirm }: DrawerProps) {
                           }))
                         }
                         placeholder="0"
-                        className={cn(
-                          'h-input w-[80px] rounded border border-stroke bg-surface-card',
-                          'px-2.5 text-sm tabular-nums text-ink placeholder:text-ink-muted',
-                          'focus:border-stroke-focus focus:outline-none transition-colors duration-fast'
-                        )}
+                        className="w-[80px] tabular-nums bg-surface-card"
                       />
                     </div>
                     <div className="flex flex-col gap-0.5 flex-1">
                       <span className="label-caps text-ink-muted">Put-away location</span>
-                      <input
-                        type="text"
+                      <Input
                         value={loc}
                         onChange={(e) =>
                           setLocs((prev) => ({ ...prev, [poItem.skuId]: e.target.value }))
                         }
                         placeholder="Z-RR-BB"
-                        className={cn(
-                          'h-input w-full rounded border border-stroke bg-surface-card',
-                          'px-2.5 text-sm font-mono text-ink-dim placeholder:font-sans placeholder:text-ink-muted',
-                          'focus:border-stroke-focus focus:outline-none transition-colors duration-fast'
-                        )}
+                        className="font-mono text-ink-dim bg-surface-card"
                       />
                     </div>
                   </div>
@@ -254,22 +220,18 @@ function ReceiveDrawer({ po, open, onClose, onConfirm }: DrawerProps) {
             &nbsp;·&nbsp;
             <span className="tabular-nums text-ink">{formatCurrency(po.totalValue)}</span>
           </span>
-
           <div className="flex items-center gap-2">
-            <button
-              onClick={onClose}
-              className="h-input px-4 rounded border border-stroke text-sm text-ink-muted hover:bg-surface-hover transition-colors duration-fast"
-            >
+            <Button variant="secondary" onClick={onClose}>
               {receivable ? 'Cancel' : 'Close'}
-            </button>
+            </Button>
             {receivable && (
-              <button
+              <Button
                 onClick={() => onConfirm(po, qtys, locs)}
                 disabled={!anyQtyEntered}
-                className="h-input px-5 rounded bg-accent-blue text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 transition-opacity duration-fast"
+                className="px-5"
               >
                 Confirm Receipt
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -320,11 +282,7 @@ export function PurchaseOrdersPage() {
 
         const allDone = updatedItems.every((i) => i.receivedQty >= i.orderedQty);
         const anyDone = updatedItems.some((i) => i.receivedQty > 0);
-        const newStatus: POStatus = allDone
-          ? 'received'
-          : anyDone
-          ? 'partial'
-          : o.status;
+        const newStatus: POStatus = allDone ? 'received' : anyDone ? 'partial' : o.status;
 
         return { ...o, items: updatedItems, status: newStatus };
       })
@@ -339,7 +297,6 @@ export function PurchaseOrdersPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Page header */}
       <div>
         <h1 className="heading">Purchase Orders</h1>
         <p className="mt-1 text-sm text-ink-muted">
@@ -428,13 +385,7 @@ export function PurchaseOrdersPage() {
                         {supplier?.name ?? po.supplierId}
                       </td>
                       <td className="px-4 py-2">
-                        <span
-                          className={cn(
-                            'rounded px-1.5 py-0.5 text-2xs font-semibold',
-                            cfg.cls,
-                            cfg.bg
-                          )}
-                        >
+                        <span className={cn('rounded px-1.5 py-0.5 text-2xs font-semibold', cfg.cls, cfg.bg)}>
                           {cfg.label}
                         </span>
                       </td>
@@ -446,12 +397,7 @@ export function PurchaseOrdersPage() {
                       </td>
                       <td className="px-4 py-2">
                         <div className="flex items-center gap-1.5">
-                          <span
-                            className={cn(
-                              'text-xs tabular-nums',
-                              overdue ? 'text-status-error' : 'text-ink-muted'
-                            )}
-                          >
+                          <span className={cn('text-xs tabular-nums', overdue ? 'text-status-error' : 'text-ink-muted')}>
                             {fmtShortDate(po.expectedDelivery)}
                           </span>
                           {overdue && (
@@ -466,15 +412,14 @@ export function PurchaseOrdersPage() {
                       </td>
                       <td className="px-4 py-2">
                         {receivable ? (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openDrawer(po);
-                            }}
-                            className="rounded px-2.5 py-1 text-xs font-medium bg-accent-blue/10 text-accent-blue hover:bg-accent-blue/20 transition-colors duration-fast"
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => { e.stopPropagation(); openDrawer(po); }}
+                            className="text-accent-blue hover:bg-accent-blue/10 hover:text-accent-blue"
                           >
                             Receive
-                          </button>
+                          </Button>
                         ) : (
                           <span className="text-xs text-ink-muted">—</span>
                         )}

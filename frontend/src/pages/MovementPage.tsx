@@ -1,6 +1,8 @@
 import { useState, useMemo, useRef } from 'react';
 import { STOCK_ITEMS, MOVEMENTS } from '@/lib/mock-data';
 import { StatusBadge } from '@/components/features/inventory/StatusBadge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { relTime } from '@/lib/dates';
 import { cn } from '@/lib/cn';
 import type { StockMovement, MovementType } from '@/types/inventory.types';
@@ -51,18 +53,11 @@ function qtyDisplay(mov: StockMovement): { text: string; cls: string } {
     adjust:   'text-accent-gold',
   };
   const cls = QTY_CLS[mov.type];
-  if (mov.type === 'adjust') {
-    return { text: mov.qty >= 0 ? `+${mov.qty}` : String(mov.qty), cls };
-  }
+  if (mov.type === 'adjust')  return { text: mov.qty >= 0 ? `+${mov.qty}` : String(mov.qty), cls };
   if (mov.type === 'issue')   return { text: `−${mov.qty}`, cls };
   if (mov.type === 'receive') return { text: `+${mov.qty}`, cls };
   return { text: String(mov.qty), cls };
 }
-
-const INPUT_BASE = cn(
-  'h-input rounded border border-stroke bg-surface-base px-2.5 text-sm text-ink',
-  'placeholder:text-ink-muted focus:border-stroke-focus focus:outline-none transition-colors duration-fast'
-);
 
 export function MovementPage() {
   const [log, setLog] = useState<StockMovement[]>(() =>
@@ -109,14 +104,14 @@ export function MovementPage() {
       id: `mov-${Date.now()}`,
       type,
       skuId: matchedItem.id,
-      qty: Math.abs(type === 'adjust' ? qtyNum : Math.abs(qtyNum)) * (type === 'adjust' && qtyNum < 0 ? -1 : 1),
+      qty: type === 'adjust' ? qtyNum : Math.abs(qtyNum),
       fromLocation:
         type === 'receive'  ? null :
         type === 'transfer' ? storedLoc :
         location.trim(),
       toLocation:
-        type === 'issue'   ? null :
-        type === 'adjust'  ? null :
+        type === 'issue'  ? null :
+        type === 'adjust' ? null :
         location.trim(),
       operatorId: 'current-user',
       timestamp: new Date().toISOString(),
@@ -134,7 +129,6 @@ export function MovementPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Page header */}
       <div>
         <h1 className="heading">Stock Movement</h1>
         <p className="mt-1 text-sm text-ink-muted">
@@ -145,20 +139,18 @@ export function MovementPage() {
       {/* Entry form */}
       <div className="rounded border border-stroke bg-surface-card px-4 py-3">
         <form onSubmit={handleSubmit} noValidate>
-          {/* Main strip */}
           <div className="flex items-end gap-2 flex-wrap">
             {/* SKU */}
             <div className="flex flex-col gap-0.5">
               <span className="label-caps text-ink-muted">SKU / Barcode</span>
-              <input
+              <Input
                 ref={skuRef}
-                type="text"
                 value={sku}
                 onChange={(e) => { setSku(e.target.value); setError(null); }}
                 placeholder="Scan or type…"
                 autoFocus
                 className={cn(
-                  INPUT_BASE, 'w-[150px]',
+                  'w-[150px]',
                   error && !matchedItem && sku.trim() ? 'border-status-error' : ''
                 )}
               />
@@ -170,7 +162,7 @@ export function MovementPage() {
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as MovementType)}
-                className={cn(INPUT_BASE, 'w-[130px]')}
+                className="h-input w-[130px] rounded border border-stroke bg-surface-base px-2.5 text-sm text-ink focus:border-stroke-focus focus:outline-none transition-colors duration-fast"
               >
                 {TYPE_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -181,50 +173,41 @@ export function MovementPage() {
             {/* Qty */}
             <div className="flex flex-col gap-0.5">
               <span className="label-caps text-ink-muted">Qty</span>
-              <input
+              <Input
                 type="number"
                 value={qty}
                 onChange={(e) => setQty(e.target.value)}
                 placeholder="0"
                 step={1}
-                className={cn(INPUT_BASE, 'w-[80px] tabular-nums')}
+                className="w-[80px] tabular-nums"
               />
             </div>
 
             {/* Location */}
             <div className="flex flex-col gap-0.5">
               <span className="label-caps text-ink-muted">{LOC_LABEL[type]}</span>
-              <input
-                type="text"
+              <Input
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="Z-RR-BB"
-                className={cn(INPUT_BASE, 'w-[120px] font-mono text-ink-dim placeholder:font-sans')}
+                className="w-[120px] font-mono text-ink-dim"
               />
             </div>
 
             {/* Note */}
             <div className="flex flex-col gap-0.5 flex-1 min-w-[120px]">
               <span className="label-caps text-ink-muted">Note (optional)</span>
-              <input
-                type="text"
+              <Input
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Damage, discrepancy, ref…"
-                className={cn(INPUT_BASE, 'w-full')}
               />
             </div>
 
-            {/* Confirm */}
-            <button
-              type="submit"
-              className="h-input shrink-0 px-5 rounded bg-accent-blue text-sm text-white font-medium hover:opacity-90 transition-opacity duration-fast whitespace-nowrap"
-            >
-              Confirm
-            </button>
+            <Button type="submit" className="px-5">Confirm</Button>
           </div>
 
-          {/* Context strip — shows when SKU is matched */}
+          {/* Context strip */}
           {matchedItem && (
             <div className="mt-2 flex items-center gap-x-3 gap-y-1 flex-wrap rounded border border-stroke/50 bg-surface-base px-3 py-1.5">
               <span className="text-xs font-medium text-ink truncate max-w-[220px]">
@@ -254,7 +237,6 @@ export function MovementPage() {
             </div>
           )}
 
-          {/* Inline error */}
           {error && (
             <p className="mt-1.5 text-xs text-status-error">{error}</p>
           )}
@@ -301,8 +283,8 @@ export function MovementPage() {
                         isNew
                           ? 'bg-accent-blue/[0.06] hover:bg-accent-blue/[0.1]'
                           : idx % 2 === 1
-                            ? 'bg-surface-hover/20 hover:bg-surface-hover'
-                            : 'hover:bg-surface-hover'
+                          ? 'bg-surface-hover/20 hover:bg-surface-hover'
+                          : 'hover:bg-surface-hover'
                       )}
                     >
                       <td className="px-3 py-1.5 text-xs text-ink-muted tabular-nums whitespace-nowrap">
@@ -317,9 +299,7 @@ export function MovementPage() {
                         <span className="sku">{item?.sku ?? mov.skuId}</span>
                       </td>
                       <td className="px-3 py-1.5 max-w-[220px]">
-                        <span className="block truncate text-xs text-ink-muted">
-                          {item?.name ?? '—'}
-                        </span>
+                        <span className="block truncate text-xs text-ink-muted">{item?.name ?? '—'}</span>
                       </td>
                       <td className={cn('px-3 py-1.5 text-right tabular-nums font-semibold', qty.cls)}>
                         {qty.text}
