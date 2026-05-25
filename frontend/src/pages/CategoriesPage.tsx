@@ -2,8 +2,6 @@ import { STOCK_ITEMS } from '@/lib/mock-data';
 import { cn } from '@/lib/cn';
 import type { StockStatus } from '@/types/inventory.types';
 
-const STATUS_ORDER: Record<StockStatus, number> = { critical: 0, low: 1, ok: 2, overstock: 3 };
-
 const STATUS_DOT: Record<StockStatus, string> = {
   critical: 'bg-status-error',
   low:      'bg-status-warning',

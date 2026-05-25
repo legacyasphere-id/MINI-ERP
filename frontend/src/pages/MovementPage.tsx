@@ -1,11 +1,12 @@
-import { useState, useMemo, useRef } from 'react';
-import { STOCK_ITEMS, MOVEMENTS } from '@/lib/mock-data';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { STOCK_ITEMS } from '@/lib/mock-data';
 import { StatusBadge } from '@/components/features/inventory/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { movementsApi, type ApiMovement } from '@/services/movements.service';
 import { relTime } from '@/lib/dates';
 import { cn } from '@/lib/cn';
-import type { StockMovement, MovementType } from '@/types/inventory.types';
+import type { MovementType } from '@/types/inventory.types';
 
 const TYPE_OPTIONS: { value: MovementType; label: string }[] = [
   { value: 'receive',  label: 'Receive (IN)'  },
@@ -29,23 +30,13 @@ const LOC_LABEL: Record<MovementType, string> = {
 };
 
 const SKU_INDEX = Object.fromEntries(STOCK_ITEMS.map((i) => [i.sku.toLowerCase(), i]));
-const ITEM_INDEX = Object.fromEntries(STOCK_ITEMS.map((i) => [i.id, i]));
 
-let refSeq = 100;
-function genRef(type: MovementType): string {
-  const n = refSeq++;
-  if (type === 'receive')  return `PO-MAN-${String(n).padStart(3, '0')}`;
-  if (type === 'issue')    return `REQ-${1900 + n}`;
-  if (type === 'transfer') return `TRF-${String(n).padStart(4, '0')}`;
-  return `ADJ-${String(n).padStart(4, '0')}`;
-}
-
-function locationDisplay(mov: StockMovement): string {
+function locationDisplay(mov: ApiMovement): string {
   if (mov.type === 'transfer') return `${mov.fromLocation ?? '?'} → ${mov.toLocation ?? '?'}`;
   return mov.fromLocation ?? mov.toLocation ?? '—';
 }
 
-function qtyDisplay(mov: StockMovement): { text: string; cls: string } {
+function qtyDisplay(mov: ApiMovement): { text: string; cls: string } {
   const QTY_CLS: Record<MovementType, string> = {
     receive:  'text-status-ok',
     issue:    'text-ink-dim',
@@ -54,24 +45,25 @@ function qtyDisplay(mov: StockMovement): { text: string; cls: string } {
   };
   const cls = QTY_CLS[mov.type];
   if (mov.type === 'adjust')  return { text: mov.qty >= 0 ? `+${mov.qty}` : String(mov.qty), cls };
-  if (mov.type === 'issue')   return { text: `−${mov.qty}`, cls };
+  if (mov.type === 'issue')   return { text: `−${Math.abs(mov.qty)}`, cls };
   if (mov.type === 'receive') return { text: `+${mov.qty}`, cls };
   return { text: String(mov.qty), cls };
 }
 
 export function MovementPage() {
-  const [log, setLog] = useState<StockMovement[]>(() =>
-    [...MOVEMENTS]
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, 20)
-  );
-  const [sku, setSku] = useState('');
-  const [type, setType] = useState<MovementType>('receive');
-  const [qty, setQty] = useState('');
-  const [location, setLocation] = useState('');
-  const [note, setNote] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [log, setLog]           = useState<ApiMovement[]>([]);
+  const [total, setTotal]       = useState(0);
+  const [loading, setLoading]   = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [lastAddedId, setLastAddedId] = useState<string | null>(null);
+
+  const [sku, setSku]           = useState('');
+  const [type, setType]         = useState<MovementType>('receive');
+  const [qty, setQty]           = useState('');
+  const [location, setLocation] = useState('');
+  const [note, setNote]         = useState('');
+  const [error, setError]       = useState<string | null>(null);
+
   const skuRef = useRef<HTMLInputElement>(null);
 
   const matchedItem = useMemo(
@@ -79,7 +71,21 @@ export function MovementPage() {
     [sku]
   );
 
-  function handleSubmit(e: React.FormEvent) {
+  const fetchLog = useCallback(async () => {
+    try {
+      const res = await movementsApi.list({ limit: 20 });
+      setLog(res.data.data);
+      setTotal(res.data.total);
+    } catch {
+      // API not reachable — keep existing log
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchLog(); }, [fetchLog]);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
@@ -100,31 +106,38 @@ export function MovementPage() {
 
     const storedLoc = `${matchedItem.location.zone}-${matchedItem.location.rack}-${matchedItem.location.bin}`;
 
-    const mov: StockMovement = {
-      id: `mov-${Date.now()}`,
-      type,
-      skuId: matchedItem.id,
-      qty: type === 'adjust' ? qtyNum : Math.abs(qtyNum),
-      fromLocation:
-        type === 'receive'  ? null :
-        type === 'transfer' ? storedLoc :
-        location.trim(),
-      toLocation:
-        type === 'issue'  ? null :
-        type === 'adjust' ? null :
-        location.trim(),
-      operatorId: 'current-user',
-      timestamp: new Date().toISOString(),
-      referenceId: genRef(type),
-      note: note.trim() || null,
-    };
+    setSubmitting(true);
+    try {
+      const res = await movementsApi.create({
+        type,
+        productId:    matchedItem.id,
+        qty:          type === 'adjust' ? qtyNum : Math.abs(qtyNum),
+        fromLocation:
+          type === 'receive'  ? null :
+          type === 'transfer' ? storedLoc :
+          location.trim(),
+        toLocation:
+          type === 'issue'  ? null :
+          type === 'adjust' ? null :
+          location.trim(),
+        note: note.trim() || null,
+      });
 
-    setLog((prev) => [mov, ...prev].slice(0, 20));
-    setLastAddedId(mov.id);
-    setSku('');
-    setQty('');
-    setNote('');
-    requestAnimationFrame(() => skuRef.current?.focus());
+      const newMov = res.data;
+      setLog((prev) => [newMov, ...prev].slice(0, 20));
+      setTotal((t) => t + 1);
+      setLastAddedId(newMov.id);
+      setSku('');
+      setQty('');
+      setNote('');
+      requestAnimationFrame(() => skuRef.current?.focus());
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } } })
+        ?.response?.data?.error;
+      setError(msg ?? 'Failed to save movement. Is the backend running?');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -132,7 +145,8 @@ export function MovementPage() {
       <div>
         <h1 className="heading">Stock Movement</h1>
         <p className="mt-1 text-sm text-ink-muted">
-          Scan a SKU, confirm type and quantity. Last {log.length} movements shown.
+          Scan a SKU, confirm type and quantity.
+          {total > 0 && <span className="tabular-nums"> {total} total movements.</span>}
         </p>
       </div>
 
@@ -204,7 +218,9 @@ export function MovementPage() {
               />
             </div>
 
-            <Button type="submit" className="px-5">Confirm</Button>
+            <Button type="submit" disabled={submitting} className="px-5">
+              {submitting ? 'Saving…' : 'Confirm'}
+            </Button>
           </div>
 
           {/* Context strip */}
@@ -237,9 +253,7 @@ export function MovementPage() {
             </div>
           )}
 
-          {error && (
-            <p className="mt-1.5 text-xs text-status-error">{error}</p>
-          )}
+          {error && <p className="mt-1.5 text-xs text-status-error">{error}</p>}
         </form>
       </div>
 
@@ -247,12 +261,16 @@ export function MovementPage() {
       <div className="rounded border border-stroke overflow-hidden">
         <div className="border-b border-stroke bg-surface-sidebar px-4 py-2 flex items-center justify-between">
           <span className="label-caps">Movement Log</span>
-          <span className="text-xs text-ink-muted tabular-nums">{log.length} entries</span>
+          <span className="text-xs text-ink-muted tabular-nums">
+            {loading ? 'Loading…' : `${log.length} shown${total > log.length ? ` of ${total}` : ''}`}
+          </span>
         </div>
 
-        {log.length === 0 ? (
-          <div className="px-4 py-8 text-center">
-            <p className="text-sm text-ink-muted">No movements recorded yet.</p>
+        {loading ? (
+          <div className="px-4 py-8 text-center text-sm text-ink-muted">Loading movements…</div>
+        ) : log.length === 0 ? (
+          <div className="px-4 py-8 text-center text-sm text-ink-muted">
+            No movements yet. Confirm one above.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -271,7 +289,6 @@ export function MovementPage() {
               </thead>
               <tbody className="divide-y divide-stroke">
                 {log.map((mov, idx) => {
-                  const item = ITEM_INDEX[mov.skuId];
                   const cfg = TYPE_CONFIG[mov.type];
                   const qty = qtyDisplay(mov);
                   const isNew = mov.id === lastAddedId && idx === 0;
@@ -296,10 +313,10 @@ export function MovementPage() {
                         </span>
                       </td>
                       <td className="px-3 py-1.5">
-                        <span className="sku">{item?.sku ?? mov.skuId}</span>
+                        <span className="sku">{mov.product.sku}</span>
                       </td>
                       <td className="px-3 py-1.5 max-w-[220px]">
-                        <span className="block truncate text-xs text-ink-muted">{item?.name ?? '—'}</span>
+                        <span className="block truncate text-xs text-ink-muted">{mov.product.name}</span>
                       </td>
                       <td className={cn('px-3 py-1.5 text-right tabular-nums font-semibold', qty.cls)}>
                         {qty.text}
@@ -315,10 +332,12 @@ export function MovementPage() {
                             {mov.note}
                           </span>
                         ) : (
-                          <span className="text-xs text-ink-muted/40">{mov.referenceId}</span>
+                          <span className="text-xs text-ink-muted/40">{mov.referenceId || '—'}</span>
                         )}
                       </td>
-                      <td className="px-3 py-1.5 text-xs text-ink-muted">{mov.operatorId}</td>
+                      <td className="px-3 py-1.5 text-xs text-ink-muted">
+                        {mov.operator?.name ?? mov.operatorId ?? '—'}
+                      </td>
                     </tr>
                   );
                 })}
