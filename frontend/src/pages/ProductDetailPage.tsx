@@ -1,8 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import { STOCK_ITEMS, MOVEMENTS, PURCHASE_ORDERS, SUPPLIERS } from '@/lib/mock-data';
+import { STOCK_ITEMS, PURCHASE_ORDERS, SUPPLIERS } from '@/lib/mock-data';
 import { StatusBadge } from '@/components/features/inventory/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { movementsApi, type ApiMovement } from '@/services/movements.service';
 import { relTime, fmtShortDate } from '@/lib/dates';
 import { formatCurrency } from '@/lib/formatters';
 import { cn } from '@/lib/cn';
@@ -47,9 +49,16 @@ export function ProductDetailPage() {
 
   const supplier = SUPPLIER_IDX[item.supplierId];
 
-  const movements = [...MOVEMENTS]
-    .filter((m) => m.skuId === item.id)
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  const [movements, setMovements] = useState<ApiMovement[]>([]);
+  const [movTotal, setMovTotal]   = useState(0);
+  const [movLoading, setMovLoading] = useState(true);
+
+  useEffect(() => {
+    movementsApi.listForProduct(item.id, { limit: 30 })
+      .then((r) => { setMovements(r.data.data); setMovTotal(r.data.total); })
+      .catch(() => {})
+      .finally(() => setMovLoading(false));
+  }, [item.id]);
 
   const relatedPOs = PURCHASE_ORDERS.filter((po) =>
     po.items.some((i) => i.skuId === item.id)
@@ -140,13 +149,17 @@ export function ProductDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* Movement history */}
+        {/* Movement history — live from API */}
         <div className="rounded border border-stroke overflow-hidden">
           <div className="border-b border-stroke bg-surface-sidebar px-4 py-2 flex items-center justify-between">
             <span className="label-caps">Movement History</span>
-            <span className="text-xs text-ink-muted tabular-nums">{movements.length} records</span>
+            <span className="text-xs text-ink-muted tabular-nums">
+              {movLoading ? 'Loading…' : `${movTotal} record${movTotal !== 1 ? 's' : ''}`}
+            </span>
           </div>
-          {movements.length === 0 ? (
+          {movLoading ? (
+            <div className="px-4 py-6 text-center text-sm text-ink-muted">Loading…</div>
+          ) : movements.length === 0 ? (
             <div className="px-4 py-6 text-center text-sm text-ink-muted">No movements recorded.</div>
           ) : (
             <div className="divide-y divide-stroke">
@@ -155,7 +168,7 @@ export function ProductDetailPage() {
                 const sign = mov.type === 'adjust' ? (mov.qty >= 0 ? '+' : '') : cfg.sign;
                 const loc =
                   mov.type === 'transfer'
-                    ? `${mov.fromLocation} → ${mov.toLocation}`
+                    ? `${mov.fromLocation ?? '?'} → ${mov.toLocation ?? '?'}`
                     : mov.fromLocation ?? mov.toLocation ?? '—';
                 return (
                   <div key={mov.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-surface-hover transition-colors duration-fast">
@@ -175,7 +188,7 @@ export function ProductDetailPage() {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-xs text-ink-muted tabular-nums">{relTime(mov.timestamp)}</p>
-                      <p className="text-2xs text-ink-muted/60">{mov.operatorId}</p>
+                      <p className="text-2xs text-ink-muted/60">{mov.operator?.name ?? mov.operatorId ?? '—'}</p>
                     </div>
                   </div>
                 );

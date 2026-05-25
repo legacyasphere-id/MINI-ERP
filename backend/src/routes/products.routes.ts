@@ -1,23 +1,7 @@
 import { Router } from 'express';
+import { getProduct, getProductMovements } from '../controllers/products.controller';
 
 export const productsRouter = Router();
 
-productsRouter.get('/', (_req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
-});
-
-productsRouter.get('/:id', (_req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
-});
-
-productsRouter.post('/', (_req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
-});
-
-productsRouter.patch('/:id', (_req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
-});
-
-productsRouter.delete('/:id', (_req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
-});
+productsRouter.get('/:id/movements', getProductMovements);
+productsRouter.get('/:id',           getProduct);

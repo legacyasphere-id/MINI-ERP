@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { STOCK_ITEMS } from '@/lib/mock-data';
 import { StatusBadge } from '@/components/features/inventory/StatusBadge';
 import { Button } from '@/components/ui/button';
@@ -63,6 +64,7 @@ export function MovementPage() {
   const [location, setLocation] = useState('');
   const [note, setNote]         = useState('');
   const [error, setError]       = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const skuRef = useRef<HTMLInputElement>(null);
 
@@ -313,7 +315,12 @@ export function MovementPage() {
                         </span>
                       </td>
                       <td className="px-3 py-1.5">
-                        <span className="sku">{mov.product.sku}</span>
+                        <button
+                          onClick={() => navigate(`/inventory/${mov.product.id}`)}
+                          className="sku hover:text-accent-blue hover:underline transition-colors duration-fast"
+                        >
+                          {mov.product.sku}
+                        </button>
                       </td>
                       <td className="px-3 py-1.5 max-w-[220px]">
                         <span className="block truncate text-xs text-ink-muted">{mov.product.name}</span>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { X, ChevronRight } from 'lucide-react';
+import { X, ChevronRight, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAlertsStore } from '@/store/alerts.store';
 import { STOCK_ITEMS } from '@/lib/mock-data';
 import { relTime } from '@/lib/dates';
@@ -33,6 +34,7 @@ function AlertModal({ alert, onClose, onAcknowledge }: {
 }) {
   const cfg = SEV_CONFIG[alert.severity];
   const sku = alert.skuId ? SKU_MAP[alert.skuId] : null;
+  const navigate = useNavigate();
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -111,7 +113,18 @@ function AlertModal({ alert, onClose, onAcknowledge }: {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 border-t border-stroke px-5 py-3">
+        <div className="flex items-center justify-between gap-2 border-t border-stroke px-5 py-3">
+          {sku ? (
+            <button
+              onClick={() => { onClose(); navigate(`/inventory/${sku.id}`); }}
+              className="flex items-center gap-1.5 text-xs text-accent-blue hover:underline"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              View {sku.sku}
+            </button>
+          ) : <span />}
+
+          <div className="flex items-center gap-2">
           <button
             onClick={onClose}
             className={cn(
@@ -129,6 +142,7 @@ function AlertModal({ alert, onClose, onAcknowledge }: {
               Acknowledge
             </button>
           )}
+          </div>
         </div>
       </div>
     </div>

@@ -40,4 +40,8 @@ export const movementsApi = {
   create(payload: CreateMovementPayload) {
     return apiClient.post<ApiMovement>('/movements', payload);
   },
+
+  listForProduct(productId: string, params?: { limit?: number; offset?: number }) {
+    return apiClient.get<MovementsResponse>(`/products/${productId}/movements`, { params });
+  },
 };
