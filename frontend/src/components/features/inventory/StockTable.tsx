@@ -12,6 +12,7 @@ interface StockTableProps {
   sortKey: SortKey;
   sortDir: SortDir;
   onSort: (key: SortKey) => void;
+  onRowClick?: (item: StockItem) => void;
 }
 
 const ROW_TINT: Partial<Record<string, string>> = {
@@ -49,7 +50,7 @@ function SortIndicator({ col, sortKey, sortDir }: { col: SortKey | null; sortKey
     : <ChevronDown className="h-3 w-3 shrink-0 text-accent-blue" />;
 }
 
-export function StockTable({ items, sortKey, sortDir, onSort }: StockTableProps) {
+export function StockTable({ items, sortKey, sortDir, onSort, onRowClick }: StockTableProps) {
   if (items.length === 0) {
     return (
       <div className="rounded border border-stroke bg-surface-card px-4 py-10 text-center">
@@ -86,8 +87,10 @@ export function StockTable({ items, sortKey, sortDir, onSort }: StockTableProps)
             {items.map((item, idx) => (
               <tr
                 key={item.id}
+                onClick={() => onRowClick?.(item)}
                 className={cn(
                   'transition-colors duration-fast hover:bg-surface-hover',
+                  onRowClick && 'cursor-pointer',
                   ROW_TINT[item.status] ?? (idx % 2 === 1 ? 'bg-surface-hover/20' : '')
                 )}
               >

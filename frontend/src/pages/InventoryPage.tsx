@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { STOCK_ITEMS } from '@/lib/mock-data';
-import type { StockStatus } from '@/types/inventory.types';
+import type { StockStatus, StockItem } from '@/types/inventory.types';
 import { StockFilters } from '@/components/features/inventory/StockFilters';
 import { StockTable, type SortKey, type SortDir } from '@/components/features/inventory/StockTable';
 
@@ -15,6 +16,7 @@ export function InventoryPage() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortKey, setSortKey] = useState<SortKey>('status');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const navigate = useNavigate();
 
   // 200ms debounce on search
   useEffect(() => {
@@ -86,6 +88,7 @@ export function InventoryPage() {
         sortKey={sortKey}
         sortDir={sortDir}
         onSort={handleSort}
+        onRowClick={(item: StockItem) => navigate(`/inventory/${item.id}`)}
       />
     </div>
   );
