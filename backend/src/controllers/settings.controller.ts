@@ -30,9 +30,31 @@ export const updateSettings = async (
     if (warehouseCode    !== undefined) update.warehouseCode    = String(warehouseCode);
     if (timezone         !== undefined) update.timezone         = String(timezone);
     if (currency         !== undefined) update.currency         = String(currency);
-    if (lowStockPct      !== undefined) update.lowStockPct      = Number(lowStockPct);
-    if (overstockPct     !== undefined) update.overstockPct     = Number(overstockPct);
-    if (movementLogLimit !== undefined) update.movementLogLimit = Number(movementLogLimit);
+
+    if (lowStockPct !== undefined) {
+      const v = Number(lowStockPct);
+      if (isNaN(v) || v < 1 || v > 200) {
+        res.status(400).json({ error: 'lowStockPct must be a number between 1 and 200' });
+        return;
+      }
+      update.lowStockPct = v;
+    }
+    if (overstockPct !== undefined) {
+      const v = Number(overstockPct);
+      if (isNaN(v) || v < 100 || v > 500) {
+        res.status(400).json({ error: 'overstockPct must be a number between 100 and 500' });
+        return;
+      }
+      update.overstockPct = v;
+    }
+    if (movementLogLimit !== undefined) {
+      const v = Number(movementLogLimit);
+      if (isNaN(v) || v < 5 || v > 200) {
+        res.status(400).json({ error: 'movementLogLimit must be a number between 5 and 200' });
+        return;
+      }
+      update.movementLogLimit = v;
+    }
 
     res.json(await settingsService.update(update));
   } catch (err) {

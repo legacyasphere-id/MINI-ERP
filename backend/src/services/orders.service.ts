@@ -106,27 +106,27 @@ export const ordersService = {
         const qty = Math.min(actualQty, remaining);
         if (qty <= 0) continue;
 
+        const product = await tx.product.findUnique({ where: { sku: line.sku } });
+        if (!product) continue;
+
         await tx.pOLine.update({
           where: { id: lineId },
           data:  { receivedQty: { increment: qty } },
         });
 
-        const product = await tx.product.findUnique({ where: { sku: line.sku } });
-        if (product) {
-          await tx.stockMovement.create({
-            data: {
-              type:        'receive',
-              productId:   product.id,
-              qty,
-              referenceId: poId,
-              note:        note ?? null,
-            },
-          });
-          await tx.product.update({
-            where: { id: product.id },
-            data:  { currentQty: { increment: qty } },
-          });
-        }
+        await tx.stockMovement.create({
+          data: {
+            type:        'receive',
+            productId:   product.id,
+            qty,
+            referenceId: poId,
+            note:        note ?? null,
+          },
+        });
+        await tx.product.update({
+          where: { id: product.id },
+          data:  { currentQty: { increment: qty } },
+        });
       }
 
       // Recompute status from updated lines

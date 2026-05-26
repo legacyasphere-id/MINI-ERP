@@ -74,22 +74,26 @@ export function MovementPage() {
     const trimmed = sku.trim();
     if (!trimmed) { setMatchedItem(null); return; }
 
+    const controller = new AbortController();
+
     const timer = setTimeout(async () => {
       setSkuLooking(true);
       try {
         const res = await productsApi.list({ search: trimmed, limit: 10 });
-        const exact = res.data.data.find(
-          (p) => p.sku.toLowerCase() === trimmed.toLowerCase()
-        ) ?? null;
-        setMatchedItem(exact);
+        if (!controller.signal.aborted) {
+          const exact = res.data.data.find(
+            (p) => p.sku.toLowerCase() === trimmed.toLowerCase()
+          ) ?? null;
+          setMatchedItem(exact);
+        }
       } catch {
-        setMatchedItem(null);
+        if (!controller.signal.aborted) setMatchedItem(null);
       } finally {
-        setSkuLooking(false);
+        if (!controller.signal.aborted) setSkuLooking(false);
       }
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); controller.abort(); };
   }, [sku]);
 
   const fetchLog = useCallback(async () => {
