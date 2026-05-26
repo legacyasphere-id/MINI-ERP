@@ -4,6 +4,7 @@ import { productsRouter }  from './products.routes';
 import { usersRouter }     from './users.routes';
 import { movementsRouter } from './movements.routes';
 import { dashboardRouter } from './dashboard.routes';
+import { ordersRouter }    from './orders.routes';
 
 export const router = Router();
 
@@ -12,3 +13,4 @@ router.use('/products',  productsRouter);
 router.use('/users',     usersRouter);
 router.use('/movements', movementsRouter);
 router.use('/dashboard', dashboardRouter);
+router.use('/orders',    ordersRouter);

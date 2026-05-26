@@ -79,6 +79,7 @@ model Product {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
   movements    StockMovement[]
+  poLines      POLine[]
 
   @@map("products")
 }
@@ -100,4 +101,43 @@ model StockMovement {
   @@index([productId])
   @@index([timestamp])
   @@map("stock_movements")
+}
+
+// ─────────────────────────────────────────
+// Purchasing
+// ─────────────────────────────────────────
+
+enum POStatus {
+  draft
+  confirmed
+  partial
+  received
+}
+
+model PurchaseOrder {
+  id               String    @id @default(cuid())
+  supplierName     String
+  status           POStatus  @default(draft)
+  expectedDelivery DateTime
+  note             String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  lines            POLine[]
+
+  @@map("purchase_orders")
+}
+
+model POLine {
+  id          String        @id @default(cuid())
+  poId        String
+  po          PurchaseOrder @relation(fields: [poId], references: [id])
+  sku         String
+  productId   String?
+  product     Product?      @relation(fields: [productId], references: [id])
+  orderedQty  Int
+  receivedQty Int           @default(0)
+  unitCost    Decimal       @db.Decimal(10, 2)
+
+  @@index([poId])
+  @@map("po_lines")
 }

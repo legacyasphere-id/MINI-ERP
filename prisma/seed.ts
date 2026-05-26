@@ -1,11 +1,11 @@
 /**
- * Seed script: upserts STOCK_ITEMS mock data into the products table.
+ * Seed script: upserts STOCK_ITEMS and PURCHASE_ORDERS mock data into the DB.
  * Run with: DATABASE_URL=... tsx prisma/seed.ts
  */
 import 'dotenv/config';
 import path from 'path';
 import { config } from 'dotenv';
-import { PrismaClient, ProductStatus } from '@prisma/client';
+import { PrismaClient, ProductStatus, POStatus } from '@prisma/client';
 
 config({ path: path.resolve(__dirname, '../backend/.env') });
 
@@ -68,6 +68,137 @@ async function main() {
 
   const totalValue = STOCK_ITEMS.reduce((s, i) => s + i.currentQty * i.costPrice, 0);
   console.log(`✓ Seeded ${STOCK_ITEMS.length} products. Estimated stock value: $${totalValue.toLocaleString()}`);
+
+  // ── Purchase Orders ──────────────────────────────────────────────────────────
+  console.log('Seeding purchase orders…');
+
+  // Build SKU → productId lookup
+  const products = await prisma.product.findMany({ select: { id: true, sku: true } });
+  const skuMap = Object.fromEntries(products.map((p) => [p.sku, p.id]));
+
+  type POSeed = {
+    id: string;
+    supplierName: string;
+    status: POStatus;
+    expectedDelivery: string;
+    createdAt: string;
+    lines: { id: string; sku: string; orderedQty: number; receivedQty: number; unitCost: number }[];
+  };
+
+  const PO_SEEDS: POSeed[] = [
+    // Confirmed — receivable
+    {
+      id: 'po-seed-001', supplierName: 'TechVault Distributors', status: 'confirmed',
+      expectedDelivery: '2026-05-29T12:00:00Z', createdAt: '2026-05-22T10:00:00Z',
+      lines: [
+        { id: 'pol-001-1', sku: 'ELEC-SSD-001', orderedQty: 50, receivedQty: 0, unitCost: 145.00 },
+        { id: 'pol-001-2', sku: 'ELEC-RAM-001', orderedQty: 30, receivedQty: 0, unitCost: 118.00 },
+      ],
+    },
+    {
+      id: 'po-seed-002', supplierName: 'Peripheral Plus', status: 'confirmed',
+      expectedDelivery: '2026-06-02T12:00:00Z', createdAt: '2026-05-23T09:30:00Z',
+      lines: [
+        { id: 'pol-002-1', sku: 'PRPH-KBD-001', orderedQty: 40, receivedQty: 0, unitCost: 76.00 },
+        { id: 'pol-002-2', sku: 'PRPH-HUB-001', orderedQty: 20, receivedQty: 0, unitCost: 42.00 },
+        { id: 'pol-002-3', sku: 'PRPH-CAM-001', orderedQty: 15, receivedQty: 0, unitCost: 105.00 },
+      ],
+    },
+    {
+      id: 'po-seed-003', supplierName: 'CableKing Supply', status: 'confirmed',
+      expectedDelivery: '2026-05-28T12:00:00Z', createdAt: '2026-05-21T14:00:00Z',
+      lines: [
+        { id: 'pol-003-1', sku: 'CABL-ETH-001', orderedQty: 80, receivedQty: 0, unitCost: 11.50 },
+        { id: 'pol-003-2', sku: 'CABL-HDMI-001', orderedQty: 50, receivedQty: 0, unitCost: 13.50 },
+      ],
+    },
+    // Partial — some lines received
+    {
+      id: 'po-seed-004', supplierName: 'TechVault Distributors', status: 'partial',
+      expectedDelivery: '2026-05-26T12:00:00Z', createdAt: '2026-05-17T08:00:00Z',
+      lines: [
+        { id: 'pol-004-1', sku: 'ELEC-MON-001', orderedQty: 20, receivedQty: 12, unitCost: 310.00 },
+        { id: 'pol-004-2', sku: 'ELEC-UPS-001', orderedQty: 10, receivedQty: 10, unitCost: 200.00 },
+      ],
+    },
+    {
+      id: 'po-seed-005', supplierName: 'CableKing Supply', status: 'partial',
+      expectedDelivery: '2026-05-25T10:00:00Z', createdAt: '2026-05-19T11:00:00Z',
+      lines: [
+        { id: 'pol-005-1', sku: 'CABL-USB-001', orderedQty: 100, receivedQty: 95, unitCost: 7.50 },
+        { id: 'pol-005-2', sku: 'CABL-PWR-001', orderedQty: 60, receivedQty: 60, unitCost: 9.50 },
+      ],
+    },
+    // Received — completed
+    {
+      id: 'po-seed-006', supplierName: 'Office Direct', status: 'received',
+      expectedDelivery: '2026-05-10T12:00:00Z', createdAt: '2026-05-05T13:00:00Z',
+      lines: [
+        { id: 'pol-006-1', sku: 'OFFC-PPR-001', orderedQty: 200, receivedQty: 200, unitCost: 7.80 },
+        { id: 'pol-006-2', sku: 'OFFC-INK-001', orderedQty: 30, receivedQty: 30, unitCost: 33.00 },
+      ],
+    },
+    {
+      id: 'po-seed-007', supplierName: 'Peripheral Plus', status: 'received',
+      expectedDelivery: '2026-05-08T10:00:00Z', createdAt: '2026-05-01T09:00:00Z',
+      lines: [
+        { id: 'pol-007-1', sku: 'PRPH-MOU-001', orderedQty: 25, receivedQty: 25, unitCost: 57.00 },
+        { id: 'pol-007-2', sku: 'PRPH-SPK-001', orderedQty: 15, receivedQty: 15, unitCost: 52.00 },
+      ],
+    },
+    {
+      id: 'po-seed-008', supplierName: 'NetCore Solutions', status: 'received',
+      expectedDelivery: '2026-04-28T12:00:00Z', createdAt: '2026-04-20T11:00:00Z',
+      lines: [
+        { id: 'pol-008-1', sku: 'ELEC-SWT-001', orderedQty: 5, receivedQty: 5, unitCost: 365.00 },
+        { id: 'pol-008-2', sku: 'ELEC-RPI-001', orderedQty: 20, receivedQty: 20, unitCost: 77.00 },
+      ],
+    },
+    // Draft — not yet sent
+    {
+      id: 'po-seed-009', supplierName: 'TechVault Distributors', status: 'draft',
+      expectedDelivery: '2026-06-10T12:00:00Z', createdAt: '2026-05-25T16:00:00Z',
+      lines: [
+        { id: 'pol-009-1', sku: 'STRG-SSD-001', orderedQty: 40, receivedQty: 0, unitCost: 72.00 },
+        { id: 'pol-009-2', sku: 'STRG-HDD-001', orderedQty: 20, receivedQty: 0, unitCost: 90.00 },
+      ],
+    },
+    {
+      id: 'po-seed-010', supplierName: 'Office Direct', status: 'draft',
+      expectedDelivery: '2026-06-15T12:00:00Z', createdAt: '2026-05-25T14:00:00Z',
+      lines: [
+        { id: 'pol-010-1', sku: 'OFFC-DSK-001', orderedQty: 10, receivedQty: 0, unitCost: 178.00 },
+        { id: 'pol-010-2', sku: 'OFFC-PPR-001', orderedQty: 150, receivedQty: 0, unitCost: 7.80 },
+      ],
+    },
+  ];
+
+  for (const po of PO_SEEDS) {
+    await prisma.purchaseOrder.upsert({
+      where:  { id: po.id },
+      update: { supplierName: po.supplierName, status: po.status, expectedDelivery: new Date(po.expectedDelivery) },
+      create: {
+        id: po.id, supplierName: po.supplierName, status: po.status,
+        expectedDelivery: new Date(po.expectedDelivery),
+        createdAt: new Date(po.createdAt),
+      },
+    });
+
+    for (const line of po.lines) {
+      const productId = skuMap[line.sku] ?? null;
+      await prisma.pOLine.upsert({
+        where:  { id: line.id },
+        update: { orderedQty: line.orderedQty, receivedQty: line.receivedQty, unitCost: line.unitCost, productId },
+        create: {
+          id: line.id, poId: po.id, sku: line.sku,
+          productId, orderedQty: line.orderedQty,
+          receivedQty: line.receivedQty, unitCost: line.unitCost,
+        },
+      });
+    }
+  }
+
+  console.log(`✓ Seeded ${PO_SEEDS.length} purchase orders.`);
 }
 
 main()
