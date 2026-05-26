@@ -1,0 +1,174 @@
+// Prisma Schema for InventoryOS
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────
+// Auth
+// ─────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+model User {
+  id           String          @id @default(cuid())
+  email        String          @unique
+  passwordHash String
+  name         String
+  role         Role            @default(STAFF)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  movements    StockMovement[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────
+// Inventory
+// ─────────────────────────────────────────
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum MovementType {
+  receive
+  issue
+  transfer
+  adjust
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  products  Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id           String          @id @default(cuid())
+  sku          String          @unique
+  name         String
+  description  String?
+  status       ProductStatus   @default(ACTIVE)
+  costPrice    Decimal         @db.Decimal(10, 2)
+  sellPrice    Decimal         @db.Decimal(10, 2)
+  currentQty   Int             @default(0)
+  minQty       Int             @default(0)
+  maxQty       Int             @default(0)
+  unit         String          @default("pcs")
+  locationZone String          @default("")
+  locationRack String          @default("")
+  locationBin  String          @default("")
+  categoryId   String?
+  category     Category?       @relation(fields: [categoryId], references: [id])
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  movements    StockMovement[]
+  poLines      POLine[]
+
+  @@map("products")
+}
+
+model StockMovement {
+  id           String       @id @default(cuid())
+  type         MovementType
+  productId    String
+  product      Product      @relation(fields: [productId], references: [id])
+  qty          Int
+  fromLocation String?
+  toLocation   String?
+  operatorId   String?
+  operator     User?        @relation(fields: [operatorId], references: [id])
+  referenceId  String       @default("")
+  note         String?
+  timestamp    DateTime     @default(now())
+
+  @@index([productId])
+  @@index([timestamp])
+  @@map("stock_movements")
+}
+
+// ─────────────────────────────────────────
+// Suppliers
+// ─────────────────────────────────────────
+
+model Supplier {
+  id               String   @id @default(cuid())
+  name             String   @unique
+  leadTimeDays     Int      @default(7)
+  reliabilityScore Int      @default(90)
+  createdAt        DateTime @default(now())
+
+  @@map("suppliers")
+}
+
+// ─────────────────────────────────────────
+// Purchasing
+// ─────────────────────────────────────────
+
+enum POStatus {
+  draft
+  confirmed
+  partial
+  received
+}
+
+model PurchaseOrder {
+  id               String    @id @default(cuid())
+  supplierName     String
+  status           POStatus  @default(draft)
+  expectedDelivery DateTime
+  note             String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  lines            POLine[]
+
+  @@map("purchase_orders")
+}
+
+model POLine {
+  id          String        @id @default(cuid())
+  poId        String
+  po          PurchaseOrder @relation(fields: [poId], references: [id])
+  sku         String
+  productId   String?
+  product     Product?      @relation(fields: [productId], references: [id])
+  orderedQty  Int
+  receivedQty Int           @default(0)
+  unitCost    Decimal       @db.Decimal(10, 2)
+
+  @@index([poId])
+  @@map("po_lines")
+}
+
+// ─────────────────────────────────────────
+// App Settings (singleton row)
+// ─────────────────────────────────────────
+
+model Settings {
+  id               String   @id @default("singleton")
+  warehouseName    String   @default("Main Distribution Centre")
+  warehouseCode    String   @default("WH-MAIN-001")
+  timezone         String   @default("UTC")
+  currency         String   @default("USD")
+  lowStockPct      Int      @default(30)
+  overstockPct     Int      @default(110)
+  movementLogLimit Int      @default(20)
+  updatedAt        DateTime @updatedAt
+
+  @@map("settings")
+}
