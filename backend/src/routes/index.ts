@@ -6,6 +6,7 @@ import { movementsRouter } from './movements.routes';
 import { dashboardRouter } from './dashboard.routes';
 import { ordersRouter }     from './orders.routes';
 import { suppliersRouter }  from './suppliers.routes';
+import { analyticsRouter }  from './analytics.routes';
 import { authenticate }     from '../middleware/auth.middleware';
 
 export const router = Router();
@@ -21,3 +22,4 @@ router.use('/movements', movementsRouter);
 router.use('/dashboard', dashboardRouter);
 router.use('/orders',    ordersRouter);
 router.use('/suppliers', suppliersRouter);
+router.use('/analytics', analyticsRouter);
