@@ -154,3 +154,21 @@ model POLine {
   @@index([poId])
   @@map("po_lines")
 }
+
+// ─────────────────────────────────────────
+// App Settings (singleton row)
+// ─────────────────────────────────────────
+
+model Settings {
+  id               String   @id @default("singleton")
+  warehouseName    String   @default("Main Distribution Centre")
+  warehouseCode    String   @default("WH-MAIN-001")
+  timezone         String   @default("UTC")
+  currency         String   @default("USD")
+  lowStockPct      Int      @default(30)
+  overstockPct     Int      @default(110)
+  movementLogLimit Int      @default(20)
+  updatedAt        DateTime @updatedAt
+
+  @@map("settings")
+}
