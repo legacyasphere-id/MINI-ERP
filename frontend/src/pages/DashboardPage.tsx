@@ -11,6 +11,7 @@ import { useAlertsStore } from '@/store/alerts.store';
 import { dashboardApi, type DashboardStats } from '@/services/dashboard.service';
 import { formatCurrency } from '@/lib/formatters';
 import { KPICard } from '@/components/features/dashboard/KPICard';
+import { SkeletonKPICard, Skeleton } from '@/components/SkeletonLoader';
 import { AlertsPanel } from '@/components/features/dashboard/AlertsPanel';
 import { InboundPanel } from '@/components/features/dashboard/InboundPanel';
 import { MovementsPanel } from '@/components/features/dashboard/MovementsPanel';
@@ -52,48 +53,54 @@ export function DashboardPage() {
 
       {/* KPI row */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
-        <KPICard
-          label="Critical Alerts"
-          value={criticalAlerts}
-          subtext="Unacknowledged — require action"
-          severity={criticalAlerts > 0 ? 'critical' : 'ok'}
-          icon={AlertTriangle}
-        />
-        <KPICard
-          label="Low / Critical Stock"
-          value={statsLoading ? '…' : lowCriticalCount}
-          subtext="SKUs below reorder threshold"
-          severity={lowCriticalCount > 6 ? 'critical' : lowCriticalCount > 2 ? 'warning' : 'ok'}
-          icon={Package}
-        />
-        <KPICard
-          label="Stock Value"
-          value={statsLoading ? '…' : formatCurrency(stats?.totalStockValue ?? 0)}
-          subtext="Current on-hand cost value"
-          severity="neutral"
-          icon={DollarSign}
-        />
-        <KPICard
-          label="Pending Inbound"
-          value={statsLoading ? '…' : stats?.inboundToday ?? 0}
-          subtext="POs due today awaiting receipt"
-          severity="neutral"
-          icon={Inbox}
-        />
-        <KPICard
-          label="Outbound Today"
-          value={statsLoading ? '…' : stats?.outboundToday ?? 0}
-          subtext="Issue movements recorded today"
-          severity="neutral"
-          icon={SendHorizonal}
-        />
-        <KPICard
-          label="Stockout Risk"
-          value={statsLoading ? '…' : stats?.criticalCount ?? 0}
-          subtext="SKUs at critical threshold"
-          severity={(stats?.criticalCount ?? 0) > 3 ? 'warning' : 'neutral'}
-          icon={TrendingDown}
-        />
+        {statsLoading ? (
+          Array.from({ length: 6 }).map((_, i) => <SkeletonKPICard key={i} />)
+        ) : (
+          <>
+            <KPICard
+              label="Critical Alerts"
+              value={criticalAlerts}
+              subtext="Unacknowledged — require action"
+              severity={criticalAlerts > 0 ? 'critical' : 'ok'}
+              icon={AlertTriangle}
+            />
+            <KPICard
+              label="Low / Critical Stock"
+              value={lowCriticalCount}
+              subtext="SKUs below reorder threshold"
+              severity={lowCriticalCount > 6 ? 'critical' : lowCriticalCount > 2 ? 'warning' : 'ok'}
+              icon={Package}
+            />
+            <KPICard
+              label="Stock Value"
+              value={formatCurrency(stats?.totalStockValue ?? 0)}
+              subtext="Current on-hand cost value"
+              severity="neutral"
+              icon={DollarSign}
+            />
+            <KPICard
+              label="Pending Inbound"
+              value={stats?.inboundToday ?? 0}
+              subtext="POs due today awaiting receipt"
+              severity="neutral"
+              icon={Inbox}
+            />
+            <KPICard
+              label="Outbound Today"
+              value={stats?.outboundToday ?? 0}
+              subtext="Issue movements recorded today"
+              severity="neutral"
+              icon={SendHorizonal}
+            />
+            <KPICard
+              label="Stockout Risk"
+              value={stats?.criticalCount ?? 0}
+              subtext="SKUs at critical threshold"
+              severity={(stats?.criticalCount ?? 0) > 3 ? 'warning' : 'neutral'}
+              icon={TrendingDown}
+            />
+          </>
+        )}
       </div>
 
       {/* Stock value trend chart */}
@@ -113,9 +120,7 @@ export function DashboardPage() {
           )}
         </div>
         {statsLoading ? (
-          <div className="h-[160px] flex items-center justify-center text-sm text-ink-muted">
-            Loading…
-          </div>
+          <Skeleton className="h-[160px] w-full" />
         ) : (
           <ResponsiveContainer width="100%" height={160}>
             <LineChart data={stats?.dailyInboundValue ?? []} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>

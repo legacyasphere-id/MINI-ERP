@@ -6,6 +6,7 @@ import { formatCurrency } from '@/lib/formatters';
 import { cn } from '@/lib/cn';
 import { suppliersApi, type ApiSupplier } from '@/services/suppliers.service';
 import { ordersApi, type ApiPurchaseOrder } from '@/services/orders.service';
+import { SkeletonTableRows } from '@/components/SkeletonLoader';
 
 const STATUS_CFG: Record<string, { label: string; cls: string; bg: string }> = {
   draft:     { label: 'Draft',     cls: 'text-ink-muted',    bg: 'bg-surface-hover'  },
@@ -211,7 +212,9 @@ export function SuppliersPage() {
 
       <div className="rounded border border-stroke overflow-hidden">
         {loading ? (
-          <div className="px-4 py-8 text-center text-sm text-ink-muted">Loading…</div>
+          <table className="w-full text-sm">
+            <tbody><SkeletonTableRows rows={5} cols={5} /></tbody>
+          </table>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

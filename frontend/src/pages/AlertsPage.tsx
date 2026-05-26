@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { X, ChevronRight, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAlertsStore } from '@/store/alerts.store';
+import { SkeletonList } from '@/components/SkeletonLoader';
 import { relTime } from '@/lib/dates';
 import { cn } from '@/lib/cn';
 import type { Alert, AlertSeverity, AlertType } from '@/types/inventory.types';
@@ -147,7 +148,8 @@ function AlertModal({ alert, onClose, onAcknowledge }: {
 }
 
 export function AlertsPage() {
-  const alerts = useAlertsStore((s) => s.alerts);
+  const alerts    = useAlertsStore((s) => s.alerts);
+  const hydrated  = useAlertsStore((s) => s.hydrated);
   const acknowledge = useAlertsStore((s) => s.acknowledge);
   const [tab, setTab] = useState<Tab>('active');
   const [selected, setSelected] = useState<Alert | null>(null);
@@ -225,7 +227,9 @@ export function AlertsPage() {
         </div>
 
         {/* List */}
-        {displayed.length === 0 ? (
+        {!hydrated ? (
+          <SkeletonList rows={5} />
+        ) : displayed.length === 0 ? (
           <div className="rounded border border-stroke bg-surface-card px-4 py-10 text-center">
             <p className="text-sm text-ink-muted">
               {tab === 'active'

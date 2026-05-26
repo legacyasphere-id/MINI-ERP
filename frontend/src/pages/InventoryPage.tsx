@@ -5,6 +5,7 @@ import { INVENTORY_CATEGORIES } from '@/lib/constants';
 import type { StockStatus, StockItem } from '@/types/inventory.types';
 import { StockFilters } from '@/components/features/inventory/StockFilters';
 import { StockTable, type SortKey, type SortDir } from '@/components/features/inventory/StockTable';
+import { SkeletonTableRows } from '@/components/SkeletonLoader';
 import { cn } from '@/lib/cn';
 
 const LIMIT = 20;
@@ -124,8 +125,12 @@ export function InventoryPage() {
       />
 
       {loading && items.length === 0 ? (
-        <div className="rounded border border-stroke bg-surface-card px-4 py-10 text-center">
-          <p className="text-sm text-ink-muted">Loading inventory…</p>
+        <div className="rounded border border-stroke overflow-hidden">
+          <table className="w-full text-sm">
+            <tbody>
+              <SkeletonTableRows rows={5} cols={8} />
+            </tbody>
+          </table>
         </div>
       ) : (
         <>

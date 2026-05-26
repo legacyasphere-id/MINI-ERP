@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { movementsApi, type ApiMovement } from '@/services/movements.service';
 import { productsApi, type ApiProduct } from '@/services/products.service';
+import { SkeletonTableRows } from '@/components/SkeletonLoader';
 import { relTime } from '@/lib/dates';
 import { cn } from '@/lib/cn';
 import type { MovementType } from '@/types/inventory.types';
@@ -299,7 +300,9 @@ export function MovementPage() {
         </div>
 
         {loading ? (
-          <div className="px-4 py-8 text-center text-sm text-ink-muted">Loading movements…</div>
+          <table className="w-full text-sm">
+            <tbody><SkeletonTableRows rows={5} cols={8} /></tbody>
+          </table>
         ) : log.length === 0 ? (
           <div className="px-4 py-8 text-center text-sm text-ink-muted">
             No movements yet. Confirm one above.
