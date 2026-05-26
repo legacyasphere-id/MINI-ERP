@@ -65,10 +65,12 @@ export const dashboardService = {
       0
     );
 
-    // Critical / low counts
-    const criticalCount = products.filter((p) => p.currentQty * 2 <= p.minQty).length;
-    const lowCount      = products.filter(
-      (p) => p.currentQty < p.minQty && p.currentQty * 2 > p.minQty
+    // Critical / low counts — mirrors analytics.service.ts (overstock takes precedence)
+    const criticalCount = products.filter(
+      (p) => p.currentQty <= p.maxQty && p.currentQty * 2 <= p.minQty
+    ).length;
+    const lowCount = products.filter(
+      (p) => p.currentQty <= p.maxQty && p.currentQty < p.minQty && p.currentQty * 2 > p.minQty
     ).length;
 
     // Aggregate inbound value by day
