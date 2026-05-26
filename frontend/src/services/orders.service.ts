@@ -28,9 +28,10 @@ export interface OrdersResponse {
 }
 
 interface ListParams {
-  status?: string;
-  page?:   number;
-  limit?:  number;
+  status?:    string;
+  productId?: string;
+  page?:      number;
+  limit?:     number;
 }
 
 interface ReceiveLine {
