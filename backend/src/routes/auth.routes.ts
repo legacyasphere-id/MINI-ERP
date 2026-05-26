@@ -1,15 +1,9 @@
 import { Router } from 'express';
+import { login, logout, getMe } from '../controllers/auth.controller';
+import { authenticate } from '../middleware/auth.middleware';
 
 export const authRouter = Router();
 
-authRouter.post('/login', (_req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
-});
-
-authRouter.post('/logout', (_req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
-});
-
-authRouter.get('/me', (_req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
-});
+authRouter.post('/login',  login);
+authRouter.post('/logout', logout);
+authRouter.get('/me',      authenticate, getMe);

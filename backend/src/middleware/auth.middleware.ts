@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { authService } from '../services/auth.service';
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -8,18 +9,26 @@ export interface AuthenticatedRequest extends Request {
   };
 }
 
-export const authenticate = (
-  _req: AuthenticatedRequest,
-  res: Response,
-  _next: NextFunction
-): void => {
-  // TODO: extract Bearer token from Authorization header, verify with JWT,
-  //       populate req.user, then call next()
-  res.status(501).json({ message: 'Auth middleware not implemented' });
+export const authenticate = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+  const header = req.headers.authorization;
+  if (!header?.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'No token provided' });
+    return;
+  }
+  try {
+    const payload = authService.verifyToken(header.slice(7));
+    req.user = { id: payload.sub, email: payload.email, role: payload.role };
+    next();
+  } catch {
+    res.status(401).json({ error: 'Invalid or expired token' });
+  }
 };
 
-export const authorize = (..._roles: string[]) =>
-  (_req: AuthenticatedRequest, res: Response, _next: NextFunction): void => {
-    // TODO: check req.user.role against allowed roles
-    res.status(501).json({ message: 'Authorization middleware not implemented' });
+export const authorize = (...roles: string[]) =>
+  (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+    next();
   };

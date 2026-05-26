@@ -5,10 +5,15 @@ import { usersRouter }     from './users.routes';
 import { movementsRouter } from './movements.routes';
 import { dashboardRouter } from './dashboard.routes';
 import { ordersRouter }    from './orders.routes';
+import { authenticate }    from '../middleware/auth.middleware';
 
 export const router = Router();
 
-router.use('/auth',      authRouter);
+// Public — no token required
+router.use('/auth', authRouter);
+
+// Protected — valid JWT required for everything below
+router.use(authenticate as any);
 router.use('/products',  productsRouter);
 router.use('/users',     usersRouter);
 router.use('/movements', movementsRouter);

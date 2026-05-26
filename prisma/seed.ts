@@ -6,6 +6,7 @@ import 'dotenv/config';
 import path from 'path';
 import { config } from 'dotenv';
 import { PrismaClient, ProductStatus, POStatus } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 config({ path: path.resolve(__dirname, '../backend/.env') });
 
@@ -199,6 +200,16 @@ async function main() {
   }
 
   console.log(`✓ Seeded ${PO_SEEDS.length} purchase orders.`);
+
+  // ── Demo User ────────────────────────────────────────────────────────────────
+  console.log('Seeding demo user…');
+  const passwordHash = await bcrypt.hash('password123', 10);
+  await prisma.user.upsert({
+    where:  { email: 'admin@inventoryos.com' },
+    update: {},
+    create: { email: 'admin@inventoryos.com', passwordHash, name: 'Admin User', role: 'ADMIN' },
+  });
+  console.log('✓ Demo user: admin@inventoryos.com / password123');
 }
 
 main()

@@ -1,7 +1,8 @@
-import { Search, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw, LogOut } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { cn } from '@/lib/cn';
+import { useMe, useLogout } from '@/hooks/useAuth';
 
 const PAGE_TITLES: Record<string, string> = {
   '/dashboard':  'Dashboard',
@@ -19,6 +20,8 @@ export function Header() {
   const [query, setQuery] = useState('');
   const [lastSync] = useState('2 min ago');
   const searchRef = useRef<HTMLInputElement>(null);
+  const { data: user } = useMe();
+  const logout = useLogout();
 
   // [/] to focus search
   useEffect(() => {
@@ -79,6 +82,23 @@ export function Header() {
         <RefreshCw className="h-3.5 w-3.5" aria-hidden />
         <span className="text-xs tabular-nums">{lastSync}</span>
       </button>
+
+      {/* User + logout */}
+      {user && (
+        <div className="flex items-center gap-2 border-l border-stroke pl-3">
+          <div className="text-right">
+            <p className="text-xs font-medium text-ink leading-none">{user.name}</p>
+            <p className="text-2xs text-ink-muted leading-none mt-0.5">{user.role}</p>
+          </div>
+          <button
+            onClick={() => logout.mutate()}
+            title="Sign out"
+            className="rounded p-1.5 text-ink-muted hover:bg-surface-hover hover:text-ink transition-colors duration-fast"
+          >
+            <LogOut className="h-3.5 w-3.5" aria-hidden />
+          </button>
+        </div>
+      )}
     </header>
   );
 }
