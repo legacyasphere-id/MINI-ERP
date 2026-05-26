@@ -1,11 +1,8 @@
 import { Router } from 'express';
+import { listUsers, createUser, updateUserRole } from '../controllers/users.controller';
 
 export const usersRouter = Router();
 
-usersRouter.get('/', (_req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
-});
-
-usersRouter.get('/:id', (_req, res) => {
-  res.status(501).json({ message: 'Not implemented' });
-});
+usersRouter.get('/',           listUsers);
+usersRouter.post('/',          createUser);
+usersRouter.patch('/:id/role', updateUserRole);
