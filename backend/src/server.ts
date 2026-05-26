@@ -9,7 +9,7 @@ const PORT = process.env.PORT ?? 3001;
 
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : true,
     credentials: true,
   })
 );
@@ -28,8 +28,10 @@ app.use((_req, res) => {
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`[server] InventoryOS API running on http://localhost:${PORT}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`[server] InventoryOS API running on http://localhost:${PORT}`);
+  });
+}
 
 export default app;
