@@ -7,8 +7,6 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid,
 } from 'recharts';
-import { PURCHASE_ORDERS, MOVEMENTS } from '@/lib/mock-data';
-import { isDueToday } from '@/lib/dates';
 import { useAlertsStore } from '@/store/alerts.store';
 import { dashboardApi, type DashboardStats } from '@/services/dashboard.service';
 import { formatCurrency } from '@/lib/formatters';
@@ -17,10 +15,6 @@ import { AlertsPanel } from '@/components/features/dashboard/AlertsPanel';
 import { InboundPanel } from '@/components/features/dashboard/InboundPanel';
 import { MovementsPanel } from '@/components/features/dashboard/MovementsPanel';
 import { LowStockPanel } from '@/components/features/dashboard/LowStockPanel';
-
-// Still mock (POs / outbound not wired to DB yet)
-const inboundToday  = PURCHASE_ORDERS.filter((po) => isDueToday(po.expectedDelivery) && ['confirmed', 'partial', 'sent'].includes(po.status)).length;
-const outboundToday = MOVEMENTS.filter((m) => m.type === 'issue' && isDueToday(m.timestamp)).length;
 
 function ChartTooltip({ active, payload, label }: {
   active?: boolean;
@@ -81,15 +75,15 @@ export function DashboardPage() {
         />
         <KPICard
           label="Pending Inbound"
-          value={inboundToday}
-          subtext="POs arriving or due today"
+          value={statsLoading ? '…' : stats?.inboundToday ?? 0}
+          subtext="POs due today awaiting receipt"
           severity="neutral"
           icon={Inbox}
         />
         <KPICard
           label="Outbound Today"
-          value={outboundToday}
-          subtext="Issue movements recorded"
+          value={statsLoading ? '…' : stats?.outboundToday ?? 0}
+          subtext="Issue movements recorded today"
           severity="neutral"
           icon={SendHorizonal}
         />

@@ -1,5 +1,18 @@
 import { prisma } from './prisma.service';
 
+function todayStart(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function tomorrowStart(): Date {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 function dayKey(date: Date): string {
   return date.toISOString().split('T')[0]; // YYYY-MM-DD
 }
@@ -24,7 +37,7 @@ export const dashboardService = {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    const [products, inboundMovements] = await Promise.all([
+    const [products, inboundMovements, inboundToday, outboundToday] = await Promise.all([
       prisma.product.findMany({
         select: { currentQty: true, costPrice: true, minQty: true, maxQty: true },
       }),
@@ -32,6 +45,17 @@ export const dashboardService = {
         where: { type: 'receive', timestamp: { gte: thirtyDaysAgo } },
         include: { product: { select: { costPrice: true } } },
         orderBy: { timestamp: 'asc' },
+      }),
+      // POs due today with actionable status
+      prisma.purchaseOrder.count({
+        where: {
+          expectedDelivery: { gte: todayStart(), lt: tomorrowStart() },
+          status: { in: ['confirmed', 'partial'] },
+        },
+      }),
+      // Issue movements recorded today
+      prisma.stockMovement.count({
+        where: { type: 'issue', timestamp: { gte: todayStart() } },
       }),
     ]);
 
@@ -65,6 +89,8 @@ export const dashboardService = {
       criticalCount,
       lowCount,
       dailyInboundValue,
+      inboundToday,
+      outboundToday,
     };
   },
 };

@@ -5,6 +5,8 @@ export interface DashboardStats {
   criticalCount:     number;
   lowCount:          number;
   dailyInboundValue: { date: string; value: number }[];
+  inboundToday:      number;
+  outboundToday:     number;
 }
 
 export const dashboardApi = {
