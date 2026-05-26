@@ -4,8 +4,9 @@ import { productsRouter }  from './products.routes';
 import { usersRouter }     from './users.routes';
 import { movementsRouter } from './movements.routes';
 import { dashboardRouter } from './dashboard.routes';
-import { ordersRouter }    from './orders.routes';
-import { authenticate }    from '../middleware/auth.middleware';
+import { ordersRouter }     from './orders.routes';
+import { suppliersRouter }  from './suppliers.routes';
+import { authenticate }     from '../middleware/auth.middleware';
 
 export const router = Router();
 
@@ -19,3 +20,4 @@ router.use('/users',     usersRouter);
 router.use('/movements', movementsRouter);
 router.use('/dashboard', dashboardRouter);
 router.use('/orders',    ordersRouter);
+router.use('/suppliers', suppliersRouter);

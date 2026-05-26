@@ -210,6 +210,24 @@ async function main() {
     create: { email: 'admin@inventoryos.com', passwordHash, name: 'Admin User', role: 'ADMIN' },
   });
   console.log('✓ Demo user: admin@inventoryos.com / password123');
+
+  // ── Suppliers ────────────────────────────────────────────────────────────────
+  console.log('Seeding suppliers…');
+  const SUPPLIER_SEEDS = [
+    { name: 'TechVault Distributors', leadTimeDays: 5,  reliabilityScore: 94 },
+    { name: 'Peripheral Plus',        leadTimeDays: 8,  reliabilityScore: 87 },
+    { name: 'CableKing Supply',       leadTimeDays: 4,  reliabilityScore: 91 },
+    { name: 'Office Direct',          leadTimeDays: 3,  reliabilityScore: 96 },
+    { name: 'NetCore Solutions',      leadTimeDays: 12, reliabilityScore: 78 },
+  ];
+  for (const s of SUPPLIER_SEEDS) {
+    await prisma.supplier.upsert({
+      where:  { name: s.name },
+      update: { leadTimeDays: s.leadTimeDays, reliabilityScore: s.reliabilityScore },
+      create: s,
+    });
+  }
+  console.log(`✓ Seeded ${SUPPLIER_SEEDS.length} suppliers.`);
 }
 
 main()

@@ -1,38 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
-import { SUPPLIERS, PURCHASE_ORDERS, STOCK_ITEMS } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
 import { fmtShortDate, relTime } from '@/lib/dates';
 import { formatCurrency } from '@/lib/formatters';
 import { cn } from '@/lib/cn';
-import type { Supplier, PurchaseOrder, POStatus } from '@/types/inventory.types';
+import { suppliersApi, type ApiSupplier } from '@/services/suppliers.service';
+import { ordersApi, type ApiPurchaseOrder } from '@/services/orders.service';
 
-const ITEM_IDX = Object.fromEntries(STOCK_ITEMS.map((i) => [i.id, i]));
-
-const STATUS_CFG: Record<POStatus, { label: string; cls: string; bg: string }> = {
+const STATUS_CFG: Record<string, { label: string; cls: string; bg: string }> = {
   draft:     { label: 'Draft',     cls: 'text-ink-muted',    bg: 'bg-surface-hover'  },
-  sent:      { label: 'Sent',      cls: 'text-accent-blue',  bg: 'bg-accent-blue/10' },
   confirmed: { label: 'Confirmed', cls: 'text-accent-gold',  bg: 'bg-accent-gold/10' },
   partial:   { label: 'Partial',   cls: 'text-status-info',  bg: 'bg-status-info/10' },
   received:  { label: 'Received',  cls: 'text-status-ok',    bg: 'bg-status-ok/10'   },
 };
 
-function reliabilityColor(score: number): string {
+function reliabilityColor(score: number) {
   if (score >= 90) return 'text-status-ok';
   if (score >= 75) return 'text-accent-gold';
   return 'text-status-warning';
 }
 
-function reliabilityBar(score: number): string {
+function reliabilityBar(score: number) {
   if (score >= 90) return 'bg-status-ok';
   if (score >= 75) return 'bg-accent-gold';
   return 'bg-status-warning';
-}
-
-function supplierPOs(supplierId: string): PurchaseOrder[] {
-  return PURCHASE_ORDERS.filter((p) => p.supplierId === supplierId).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
 }
 
 // ─── Detail Panel ────────────────────────────────────────────────────────────
@@ -41,15 +32,19 @@ function SupplierPanel({
   supplier,
   open,
   onClose,
+  allOrders,
 }: {
-  supplier: Supplier | null;
+  supplier: ApiSupplier | null;
   open: boolean;
   onClose: () => void;
+  allOrders: ApiPurchaseOrder[];
 }) {
   if (!supplier) return null;
 
-  const pos = supplierPOs(supplier.id);
-  const openPos = pos.filter((p) => p.status !== 'received' && p.status !== 'draft');
+  const pos     = allOrders
+    .filter((o) => o.supplierName === supplier.name)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const openPos = pos.filter((o) => o.status === 'confirmed' || o.status === 'partial');
 
   return (
     <>
@@ -74,7 +69,9 @@ function SupplierPanel({
             <h2 className="text-sm font-semibold text-ink">{supplier.name}</h2>
             <p className="mt-0.5 text-xs text-ink-muted">
               {supplier.activeOrders} active order{supplier.activeOrders !== 1 ? 's' : ''}
-              &nbsp;·&nbsp;Last delivery {relTime(supplier.lastDelivery)}
+              {supplier.lastDelivery && (
+                <>&nbsp;·&nbsp;Last delivery {relTime(supplier.lastDelivery)}</>
+              )}
             </p>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
@@ -125,9 +122,9 @@ function SupplierPanel({
           ) : (
             <div className="divide-y divide-stroke">
               {pos.map((po) => {
-                const cfg = STATUS_CFG[po.status];
-                const totalOrdered = po.items.reduce((s, i) => s + i.orderedQty, 0);
-                const totalReceived = po.items.reduce((s, i) => s + i.receivedQty, 0);
+                const cfg           = STATUS_CFG[po.status] ?? STATUS_CFG.draft;
+                const totalOrdered  = po.lines.reduce((s, l) => s + l.orderedQty, 0);
+                const totalReceived = po.lines.reduce((s, l) => s + l.receivedQty, 0);
                 return (
                   <div key={po.id} className="px-5 py-3">
                     <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -141,22 +138,16 @@ function SupplierPanel({
                     </div>
                     <div className="flex items-center justify-between text-xs text-ink-muted">
                       <span>
-                        {po.items.length} line{po.items.length !== 1 ? 's' : ''}
+                        {po.lines.length} line{po.lines.length !== 1 ? 's' : ''}
                         &nbsp;·&nbsp;
                         {totalReceived}/{totalOrdered} units received
                       </span>
                       <span>Due {fmtShortDate(po.expectedDelivery)}</span>
                     </div>
-                    {/* SKU chips */}
                     <div className="mt-1.5 flex flex-wrap gap-1">
-                      {po.items.map((item) => {
-                        const stock = ITEM_IDX[item.skuId];
-                        return (
-                          <span key={item.skuId} className="sku text-2xs">
-                            {stock?.sku ?? item.skuId}
-                          </span>
-                        );
-                      })}
+                      {po.lines.map((line) => (
+                        <span key={line.id} className="sku text-2xs">{line.sku}</span>
+                      ))}
                     </div>
                   </div>
                 );
@@ -165,7 +156,6 @@ function SupplierPanel({
           )}
         </div>
 
-        {/* Footer */}
         <div className="border-t border-stroke px-5 py-3 flex justify-end">
           <Button variant="secondary" onClick={onClose}>Close</Button>
         </div>
@@ -177,10 +167,30 @@ function SupplierPanel({
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export function SuppliersPage() {
-  const [selected, setSelected] = useState<Supplier | null>(null);
+  const [suppliers, setSuppliers] = useState<ApiSupplier[]>([]);
+  const [orders,    setOrders]    = useState<ApiPurchaseOrder[]>([]);
+  const [loading,   setLoading]   = useState(true);
+  const [selected,  setSelected]  = useState<ApiSupplier | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
 
-  function openPanel(s: Supplier) {
+  const fetchData = useCallback(async () => {
+    try {
+      const [sRes, oRes] = await Promise.all([
+        suppliersApi.list(),
+        ordersApi.list({ limit: 100 }),
+      ]);
+      setSuppliers(sRes.data);
+      setOrders(oRes.data.data);
+    } catch {
+      // silent — page still renders empty
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  function openPanel(s: ApiSupplier) {
     setSelected(s);
     requestAnimationFrame(() => setPanelOpen(true));
   }
@@ -195,67 +205,76 @@ export function SuppliersPage() {
       <div>
         <h1 className="heading">Suppliers</h1>
         <p className="mt-1 text-sm text-ink-muted">
-          {SUPPLIERS.length} suppliers — click to view orders and performance.
+          {loading ? 'Loading…' : `${suppliers.length} suppliers — click to view orders and performance.`}
         </p>
       </div>
 
       <div className="rounded border border-stroke overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-stroke bg-surface-sidebar">
-                <th className="px-4 py-2.5 text-left label-caps min-w-[200px]">Supplier</th>
-                <th className="px-4 py-2.5 text-left label-caps w-32">Lead Time</th>
-                <th className="px-4 py-2.5 text-left label-caps w-48">Reliability</th>
-                <th className="px-4 py-2.5 text-left label-caps w-28">Active POs</th>
-                <th className="px-4 py-2.5 text-left label-caps w-40">Last Delivery</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stroke">
-              {SUPPLIERS.map((s, idx) => (
-                <tr
-                  key={s.id}
-                  onClick={() => openPanel(s)}
-                  className={cn(
-                    'cursor-pointer transition-colors duration-fast',
-                    idx % 2 === 1
-                      ? 'bg-surface-hover/20 hover:bg-surface-hover'
-                      : 'hover:bg-surface-hover'
-                  )}
-                >
-                  <td className="px-4 py-2.5">
-                    <span className="text-sm font-medium text-ink">{s.name}</span>
-                  </td>
-                  <td className="px-4 py-2.5 tabular-nums text-ink-muted">
-                    {s.leadTimeDays} days
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className={cn('tabular-nums font-semibold text-sm w-10', reliabilityColor(s.reliabilityScore))}>
-                        {s.reliabilityScore}%
-                      </span>
-                      <div className="h-1.5 w-24 rounded-full bg-surface-hover">
-                        <div
-                          className={cn('h-1.5 rounded-full', reliabilityBar(s.reliabilityScore))}
-                          style={{ width: `${s.reliabilityScore}%` }}
-                        />
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-2.5 tabular-nums text-ink-muted">
-                    {s.activeOrders}
-                  </td>
-                  <td className="px-4 py-2.5 text-xs text-ink-muted">
-                    {relTime(s.lastDelivery)}
-                  </td>
+        {loading ? (
+          <div className="px-4 py-8 text-center text-sm text-ink-muted">Loading…</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-stroke bg-surface-sidebar">
+                  <th className="px-4 py-2.5 text-left label-caps min-w-[200px]">Supplier</th>
+                  <th className="px-4 py-2.5 text-left label-caps w-32">Lead Time</th>
+                  <th className="px-4 py-2.5 text-left label-caps w-48">Reliability</th>
+                  <th className="px-4 py-2.5 text-left label-caps w-28">Active POs</th>
+                  <th className="px-4 py-2.5 text-left label-caps w-40">Last Delivery</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-stroke">
+                {suppliers.map((s, idx) => (
+                  <tr
+                    key={s.id}
+                    onClick={() => openPanel(s)}
+                    className={cn(
+                      'cursor-pointer transition-colors duration-fast',
+                      idx % 2 === 1
+                        ? 'bg-surface-hover/20 hover:bg-surface-hover'
+                        : 'hover:bg-surface-hover'
+                    )}
+                  >
+                    <td className="px-4 py-2.5">
+                      <span className="text-sm font-medium text-ink">{s.name}</span>
+                    </td>
+                    <td className="px-4 py-2.5 tabular-nums text-ink-muted">
+                      {s.leadTimeDays} days
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className={cn('tabular-nums font-semibold text-sm w-10', reliabilityColor(s.reliabilityScore))}>
+                          {s.reliabilityScore}%
+                        </span>
+                        <div className="h-1.5 w-24 rounded-full bg-surface-hover">
+                          <div
+                            className={cn('h-1.5 rounded-full', reliabilityBar(s.reliabilityScore))}
+                            style={{ width: `${s.reliabilityScore}%` }}
+                          />
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5 tabular-nums text-ink-muted">
+                      {s.activeOrders}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-ink-muted">
+                      {s.lastDelivery ? relTime(s.lastDelivery) : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-      <SupplierPanel supplier={selected} open={panelOpen} onClose={closePanel} />
+      <SupplierPanel
+        supplier={selected}
+        open={panelOpen}
+        onClose={closePanel}
+        allOrders={orders}
+      />
     </div>
   );
 }

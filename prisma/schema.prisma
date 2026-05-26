@@ -1,5 +1,4 @@
 // Prisma Schema for InventoryOS
-// Run: npx prisma migrate dev --name init
 
 generator client {
   provider = "prisma-client-js"
@@ -101,6 +100,20 @@ model StockMovement {
   @@index([productId])
   @@index([timestamp])
   @@map("stock_movements")
+}
+
+// ─────────────────────────────────────────
+// Suppliers
+// ─────────────────────────────────────────
+
+model Supplier {
+  id               String   @id @default(cuid())
+  name             String   @unique
+  leadTimeDays     Int      @default(7)
+  reliabilityScore Int      @default(90)
+  createdAt        DateTime @default(now())
+
+  @@map("suppliers")
 }
 
 // ─────────────────────────────────────────
