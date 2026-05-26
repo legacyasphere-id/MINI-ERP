@@ -21,9 +21,10 @@ function computeTotalValue(lines: { orderedQty: number; unitCost: Prisma.Decimal
 }
 
 interface ListOpts {
-  status?: POStatus;
-  page?:   number;
-  limit?:  number;
+  status?:    POStatus;
+  productId?: string;
+  page?:      number;
+  limit?:     number;
 }
 
 export const ordersService = {
@@ -32,7 +33,10 @@ export const ordersService = {
     const limit = Math.min(opts?.limit ?? 20, 100);
     const skip  = (page - 1) * limit;
 
-    const where = opts?.status ? { status: opts.status } : {};
+    const where: Prisma.PurchaseOrderWhereInput = {
+      ...(opts?.status    ? { status: opts.status }                              : {}),
+      ...(opts?.productId ? { lines: { some: { productId: opts.productId } } }   : {}),
+    };
 
     const [raw, total] = await Promise.all([
       prisma.purchaseOrder.findMany({

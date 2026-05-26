@@ -55,6 +55,10 @@ export interface Alert {
   type: AlertType;
   message: string;
   skuId: string | null;
+  sku: string | null;
+  skuName: string | null;
+  currentQty: number | null;
+  minQty: number | null;
   poId: string | null;
   timestamp: string;
   isAcknowledged: boolean;

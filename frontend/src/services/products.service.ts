@@ -13,6 +13,7 @@ export interface ApiProduct {
   locationRack: string;
   locationBin:  string;
   status:       StockStatus;
+  stockStatus:  StockStatus;
   updatedAt:    string;
   category:     { id: string; name: string } | null;
 }
@@ -41,5 +42,8 @@ export const productsApi = {
       Object.entries(params ?? {}).filter(([, v]) => v !== undefined && v !== 'all' && v !== '')
     );
     return apiClient.get<ProductsResponse>('/products', { params: clean });
+  },
+  getById(id: string) {
+    return apiClient.get<ApiProduct>(`/products/${id}`);
   },
 };

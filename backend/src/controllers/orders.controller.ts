@@ -9,10 +9,11 @@ export const listOrders = async (req: Request, res: Response, next: NextFunction
   try {
     const rawStatus = typeof req.query.status === 'string' ? req.query.status : undefined;
     const status    = rawStatus && VALID_STATUSES.has(rawStatus) ? (rawStatus as POStatus) : undefined;
+    const productId = typeof req.query.productId === 'string' ? req.query.productId : undefined;
     const page      = Math.max(1, Number(req.query.page)  || 1);
     const limit     = Math.min(Number(req.query.limit) || 20, 100);
 
-    const result = await ordersService.list({ status, page, limit });
+    const result = await ordersService.list({ status, productId, page, limit });
     res.json(result);
   } catch (err) {
     next(err);

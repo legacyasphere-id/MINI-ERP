@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { X, ChevronRight, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAlertsStore } from '@/store/alerts.store';
-import { STOCK_ITEMS } from '@/lib/mock-data';
 import { relTime } from '@/lib/dates';
 import { cn } from '@/lib/cn';
 import type { Alert, AlertSeverity, AlertType } from '@/types/inventory.types';
@@ -22,7 +21,6 @@ const TYPE_LABEL: Record<AlertType, string> = {
   receiving_pending: 'Receiving Pending',
 };
 
-const SKU_MAP = Object.fromEntries(STOCK_ITEMS.map((i) => [i.id, i]));
 const CURRENT_OPERATOR = 'current-user';
 
 type Tab = 'active' | 'history';
@@ -33,7 +31,6 @@ function AlertModal({ alert, onClose, onAcknowledge }: {
   onAcknowledge: (id: string) => void;
 }) {
   const cfg = SEV_CONFIG[alert.severity];
-  const sku = alert.skuId ? SKU_MAP[alert.skuId] : null;
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -85,11 +82,11 @@ function AlertModal({ alert, onClose, onAcknowledge }: {
               <p className="mt-0.5 text-xs text-ink">{relTime(alert.timestamp)}</p>
             </div>
 
-            {sku && (
+            {alert.sku && (
               <div>
                 <p className="label-caps text-ink-muted">SKU</p>
-                <p className="mt-0.5 sku">{sku.sku}</p>
-                <p className="text-xs text-ink-muted truncate">{sku.name}</p>
+                <p className="mt-0.5 sku">{alert.sku}</p>
+                <p className="text-xs text-ink-muted truncate">{alert.skuName}</p>
               </div>
             )}
 
@@ -114,13 +111,13 @@ function AlertModal({ alert, onClose, onAcknowledge }: {
 
         {/* Footer */}
         <div className="flex items-center justify-between gap-2 border-t border-stroke px-5 py-3">
-          {sku ? (
+          {alert.skuId && alert.sku ? (
             <button
-              onClick={() => { onClose(); navigate(`/inventory/${sku.id}`); }}
+              onClick={() => { onClose(); navigate(`/inventory/${alert.skuId}`); }}
               className="flex items-center gap-1.5 text-xs text-accent-blue hover:underline"
             >
               <ExternalLink className="h-3.5 w-3.5" />
-              View {sku.sku}
+              View {alert.sku}
             </button>
           ) : <span />}
 
@@ -241,7 +238,6 @@ export function AlertsPage() {
             <div className="divide-y divide-stroke">
               {displayed.map((alert) => {
                 const cfg = SEV_CONFIG[alert.severity];
-                const sku = alert.skuId ? SKU_MAP[alert.skuId] : null;
                 return (
                   <button
                     key={alert.id}
@@ -255,10 +251,10 @@ export function AlertsPage() {
                         <span className={cn('text-2xs font-semibold', cfg.text)}>{cfg.label}</span>
                         <span className="text-2xs text-ink-muted">·</span>
                         <span className="text-2xs text-ink-muted">{TYPE_LABEL[alert.type]}</span>
-                        {sku && (
+                        {alert.sku && (
                           <>
                             <span className="text-2xs text-ink-muted">·</span>
-                            <span className="sku text-2xs">{sku.sku}</span>
+                            <span className="sku text-2xs">{alert.sku}</span>
                           </>
                         )}
                         <span className="text-2xs text-ink-muted">·</span>

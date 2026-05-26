@@ -30,7 +30,14 @@ export const getProduct = async (req: Request, res: Response, next: NextFunction
       res.status(404).json({ error: 'Product not found' });
       return;
     }
-    res.json(product);
+    type StockStatus = 'ok' | 'low' | 'critical' | 'overstock';
+    function computeStatus(qty: number, min: number, max: number): StockStatus {
+      if (qty * 2 <= min) return 'critical';
+      if (qty < min)      return 'low';
+      if (qty > max)      return 'overstock';
+      return 'ok';
+    }
+    res.json({ ...product, stockStatus: computeStatus(product.currentQty, product.minQty, product.maxQty) });
   } catch (err) {
     next(err);
   }

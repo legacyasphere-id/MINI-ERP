@@ -1,10 +1,10 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { STOCK_ITEMS } from '@/lib/mock-data';
 import { StatusBadge } from '@/components/features/inventory/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { movementsApi, type ApiMovement } from '@/services/movements.service';
+import { productsApi, type ApiProduct } from '@/services/products.service';
 import { relTime } from '@/lib/dates';
 import { cn } from '@/lib/cn';
 import type { MovementType } from '@/types/inventory.types';
@@ -29,8 +29,6 @@ const LOC_LABEL: Record<MovementType, string> = {
   transfer: 'Destination',
   adjust:   'Location',
 };
-
-const SKU_INDEX = Object.fromEntries(STOCK_ITEMS.map((i) => [i.sku.toLowerCase(), i]));
 
 function locationDisplay(mov: ApiMovement): string {
   if (mov.type === 'transfer') return `${mov.fromLocation ?? '?'} → ${mov.toLocation ?? '?'}`;
@@ -64,14 +62,35 @@ export function MovementPage() {
   const [location, setLocation] = useState('');
   const [note, setNote]         = useState('');
   const [error, setError]       = useState<string | null>(null);
-  const navigate = useNavigate();
 
+  const [matchedItem, setMatchedItem] = useState<ApiProduct | null>(null);
+  const [skuLooking,  setSkuLooking]  = useState(false);
+
+  const navigate = useNavigate();
   const skuRef = useRef<HTMLInputElement>(null);
 
-  const matchedItem = useMemo(
-    () => (sku.trim() ? SKU_INDEX[sku.trim().toLowerCase()] ?? null : null),
-    [sku]
-  );
+  // Debounced SKU lookup via API
+  useEffect(() => {
+    const trimmed = sku.trim();
+    if (!trimmed) { setMatchedItem(null); return; }
+
+    const timer = setTimeout(async () => {
+      setSkuLooking(true);
+      try {
+        const res = await productsApi.list({ search: trimmed, limit: 10 });
+        const exact = res.data.data.find(
+          (p) => p.sku.toLowerCase() === trimmed.toLowerCase()
+        ) ?? null;
+        setMatchedItem(exact);
+      } catch {
+        setMatchedItem(null);
+      } finally {
+        setSkuLooking(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [sku]);
 
   const fetchLog = useCallback(async () => {
     try {
@@ -106,7 +125,7 @@ export function MovementPage() {
       return;
     }
 
-    const storedLoc = `${matchedItem.location.zone}-${matchedItem.location.rack}-${matchedItem.location.bin}`;
+    const storedLoc = `${matchedItem.locationZone}-${matchedItem.locationRack}-${matchedItem.locationBin}`;
 
     setSubmitting(true);
     try {
@@ -130,6 +149,7 @@ export function MovementPage() {
       setTotal((t) => t + 1);
       setLastAddedId(newMov.id);
       setSku('');
+      setMatchedItem(null);
       setQty('');
       setNote('');
       requestAnimationFrame(() => skuRef.current?.focus());
@@ -226,32 +246,38 @@ export function MovementPage() {
           </div>
 
           {/* Context strip */}
-          {matchedItem && (
+          {(matchedItem || skuLooking) && (
             <div className="mt-2 flex items-center gap-x-3 gap-y-1 flex-wrap rounded border border-stroke/50 bg-surface-base px-3 py-1.5">
-              <span className="text-xs font-medium text-ink truncate max-w-[220px]">
-                {matchedItem.name}
-              </span>
-              <span className="text-ink-muted text-xs">·</span>
-              <span className="text-xs text-ink-muted">
-                Current:&nbsp;
-                <span className="tabular-nums text-ink">{matchedItem.currentQty.toLocaleString()}</span>
-                &nbsp;{matchedItem.unit}
-              </span>
-              <span className="text-ink-muted text-xs">·</span>
-              <span className="sku">
-                {matchedItem.location.zone}-{matchedItem.location.rack}-{matchedItem.location.bin}
-              </span>
-              <StatusBadge status={matchedItem.status} />
-              {type === 'transfer' && location.trim() && (
+              {skuLooking && !matchedItem ? (
+                <span className="text-xs text-ink-muted">Looking up…</span>
+              ) : matchedItem ? (
                 <>
+                  <span className="text-xs font-medium text-ink truncate max-w-[220px]">
+                    {matchedItem.name}
+                  </span>
                   <span className="text-ink-muted text-xs">·</span>
                   <span className="text-xs text-ink-muted">
-                    {matchedItem.location.zone}-{matchedItem.location.rack}-{matchedItem.location.bin}
-                    &nbsp;→&nbsp;
-                    <span className="font-mono text-ink-dim">{location.trim()}</span>
+                    Current:&nbsp;
+                    <span className="tabular-nums text-ink">{matchedItem.currentQty.toLocaleString()}</span>
+                    &nbsp;{matchedItem.unit}
                   </span>
+                  <span className="text-ink-muted text-xs">·</span>
+                  <span className="sku">
+                    {matchedItem.locationZone}-{matchedItem.locationRack}-{matchedItem.locationBin}
+                  </span>
+                  <StatusBadge status={matchedItem.status} />
+                  {type === 'transfer' && location.trim() && (
+                    <>
+                      <span className="text-ink-muted text-xs">·</span>
+                      <span className="text-xs text-ink-muted">
+                        {matchedItem.locationZone}-{matchedItem.locationRack}-{matchedItem.locationBin}
+                        &nbsp;→&nbsp;
+                        <span className="font-mono text-ink-dim">{location.trim()}</span>
+                      </span>
+                    </>
+                  )}
                 </>
-              )}
+              ) : null}
             </div>
           )}
 
@@ -292,7 +318,7 @@ export function MovementPage() {
               <tbody className="divide-y divide-stroke">
                 {log.map((mov, idx) => {
                   const cfg = TYPE_CONFIG[mov.type];
-                  const qty = qtyDisplay(mov);
+                  const q   = qtyDisplay(mov);
                   const isNew = mov.id === lastAddedId && idx === 0;
                   return (
                     <tr
@@ -325,8 +351,8 @@ export function MovementPage() {
                       <td className="px-3 py-1.5 max-w-[220px]">
                         <span className="block truncate text-xs text-ink-muted">{mov.product.name}</span>
                       </td>
-                      <td className={cn('px-3 py-1.5 text-right tabular-nums font-semibold', qty.cls)}>
-                        {qty.text}
+                      <td className={cn('px-3 py-1.5 text-right tabular-nums font-semibold', q.cls)}>
+                        {q.text}
                       </td>
                       <td className="px-3 py-1.5">
                         <span className="sku text-xs text-ink-dim whitespace-nowrap">
