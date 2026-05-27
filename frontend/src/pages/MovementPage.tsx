@@ -7,6 +7,7 @@ import { movementsApi, type ApiMovement } from '@/services/movements.service';
 import { productsApi, type ApiProduct } from '@/services/products.service';
 import { SkeletonTableRows } from '@/components/SkeletonLoader';
 import { EmptyState } from '@/components/EmptyState';
+import { useToast } from '@/lib/toast';
 import { ScanLine } from 'lucide-react';
 import { relTime } from '@/lib/dates';
 import { cn } from '@/lib/cn';
@@ -70,7 +71,8 @@ export function MovementPage() {
   const [skuLooking,  setSkuLooking]  = useState(false);
 
   const navigate = useNavigate();
-  const skuRef = useRef<HTMLInputElement>(null);
+  const skuRef   = useRef<HTMLInputElement>(null);
+  const toast    = useToast();
 
   // Debounced SKU lookup via API
   useEffect(() => {
@@ -159,11 +161,14 @@ export function MovementPage() {
       setMatchedItem(null);
       setQty('');
       setNote('');
+      toast.success('Movement recorded');
       requestAnimationFrame(() => skuRef.current?.focus());
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })
         ?.response?.data?.error;
-      setError(msg ?? 'Failed to save movement. Is the backend running?');
+      const errMsg = msg ?? 'Failed to save movement. Is the backend running?';
+      setError(errMsg);
+      toast.error(errMsg);
     } finally {
       setSubmitting(false);
     }

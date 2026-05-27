@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary }      from '@/components/ErrorBoundary';
+import { ToastProvider }      from '@/lib/toast';
 import { AppShell }           from '@/components/layout/AppShell';
 import { RequireAuth }        from '@/components/layout/RequireAuth';
 import { DashboardPage }      from '@/pages/DashboardPage';
@@ -19,6 +20,7 @@ import { NotFoundPage }       from '@/pages/NotFoundPage';
 export default function App() {
   return (
     <ErrorBoundary>
+      <ToastProvider>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route element={<RequireAuth />}>
@@ -39,6 +41,7 @@ export default function App() {
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      </ToastProvider>
     </ErrorBoundary>
   );
 }
