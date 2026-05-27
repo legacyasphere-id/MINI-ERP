@@ -58,10 +58,11 @@ export function Header() {
         />
         <input
           ref={searchRef}
-          type="text"
+          type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search SKU, name… [/]"
+          aria-label="Search"
           className={cn(
             'h-input w-full rounded bg-surface-base pl-8 pr-3 text-sm text-ink',
             'border border-stroke placeholder:text-ink-muted',
@@ -92,6 +93,7 @@ export function Header() {
           </div>
           <button
             onClick={() => logout.mutate()}
+            aria-label="Sign out"
             title="Sign out"
             className="rounded p-1.5 text-ink-muted hover:bg-surface-hover hover:text-ink transition-colors duration-fast"
           >

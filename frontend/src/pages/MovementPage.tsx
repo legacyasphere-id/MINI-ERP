@@ -190,8 +190,9 @@ export function MovementPage() {
           <div className="flex items-end gap-2 flex-wrap">
             {/* SKU */}
             <div className="flex flex-col gap-0.5">
-              <span className="label-caps text-ink-muted">SKU / Barcode</span>
+              <label htmlFor="mov-sku" className="label-caps text-ink-muted">SKU / Barcode</label>
               <Input
+                id="mov-sku"
                 ref={skuRef}
                 value={sku}
                 onChange={(e) => { setSku(e.target.value); setError(null); }}
@@ -206,8 +207,9 @@ export function MovementPage() {
 
             {/* Type */}
             <div className="flex flex-col gap-0.5">
-              <span className="label-caps text-ink-muted">Type</span>
+              <label htmlFor="mov-type" className="label-caps text-ink-muted">Type</label>
               <select
+                id="mov-type"
                 value={type}
                 onChange={(e) => setType(e.target.value as MovementType)}
                 className="h-input w-[130px] rounded border border-stroke bg-surface-base px-2.5 text-sm text-ink focus:border-stroke-focus focus:outline-none transition-colors duration-fast"
@@ -220,8 +222,9 @@ export function MovementPage() {
 
             {/* Qty */}
             <div className="flex flex-col gap-0.5">
-              <span className="label-caps text-ink-muted">Qty</span>
+              <label htmlFor="mov-qty" className="label-caps text-ink-muted">Qty</label>
               <Input
+                id="mov-qty"
                 type="number"
                 value={qty}
                 onChange={(e) => setQty(e.target.value)}
@@ -233,8 +236,9 @@ export function MovementPage() {
 
             {/* Location */}
             <div className="flex flex-col gap-0.5">
-              <span className="label-caps text-ink-muted">{LOC_LABEL[type]}</span>
+              <label htmlFor="mov-location" className="label-caps text-ink-muted">{LOC_LABEL[type]}</label>
               <Input
+                id="mov-location"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="Z-RR-BB"
@@ -244,8 +248,9 @@ export function MovementPage() {
 
             {/* Note */}
             <div className="flex flex-col gap-0.5 flex-1 min-w-[120px]">
-              <span className="label-caps text-ink-muted">Note (optional)</span>
+              <label htmlFor="mov-note" className="label-caps text-ink-muted">Note (optional)</label>
               <Input
+                id="mov-note"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Damage, discrepancy, ref…"
@@ -321,14 +326,14 @@ export function MovementPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-stroke bg-surface-sidebar">
-                  <th className="px-3 py-2 text-left label-caps w-28">Time</th>
-                  <th className="px-3 py-2 text-left label-caps w-14">Type</th>
-                  <th className="px-3 py-2 text-left label-caps w-36">SKU</th>
-                  <th className="px-3 py-2 text-left label-caps min-w-[160px]">Item</th>
-                  <th className="px-3 py-2 text-right label-caps w-20">Qty</th>
-                  <th className="px-3 py-2 text-left label-caps w-44">Location</th>
-                  <th className="px-3 py-2 text-left label-caps min-w-[160px]">Note / Ref</th>
-                  <th className="px-3 py-2 text-left label-caps w-28">Operator</th>
+                  <th scope="col" className="px-3 py-2 text-left label-caps w-28">Time</th>
+                  <th scope="col" className="px-3 py-2 text-left label-caps w-14">Type</th>
+                  <th scope="col" className="px-3 py-2 text-left label-caps w-36">SKU</th>
+                  <th scope="col" className="px-3 py-2 text-left label-caps min-w-[160px]">Item</th>
+                  <th scope="col" className="px-3 py-2 text-right label-caps w-20">Qty</th>
+                  <th scope="col" className="px-3 py-2 text-left label-caps w-44">Location</th>
+                  <th scope="col" className="px-3 py-2 text-left label-caps min-w-[160px]">Note / Ref</th>
+                  <th scope="col" className="px-3 py-2 text-left label-caps w-28">Operator</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stroke">

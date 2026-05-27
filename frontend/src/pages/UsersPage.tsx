@@ -73,8 +73,8 @@ function InviteModal({
         <div className="w-full max-w-md rounded border border-stroke bg-surface-card shadow-xl">
           <div className="flex items-center justify-between border-b border-stroke px-5 py-4">
             <h2 className="text-sm font-semibold text-ink">Invite User</h2>
-            <Button variant="ghost" size="icon" onClick={handleClose}>
-              <X className="h-4 w-4" />
+            <Button variant="ghost" size="icon" onClick={handleClose} aria-label="Close">
+              <X className="h-4 w-4" aria-hidden />
             </Button>
           </div>
 
@@ -201,10 +201,10 @@ export function UsersPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-stroke bg-surface-sidebar">
-                  <th className="px-4 py-2.5 text-left label-caps min-w-[160px]">Name</th>
-                  <th className="px-4 py-2.5 text-left label-caps min-w-[220px]">Email</th>
-                  <th className="px-4 py-2.5 text-left label-caps w-52">Role</th>
-                  <th className="px-4 py-2.5 text-left label-caps w-40">Joined</th>
+                  <th scope="col" className="px-4 py-2.5 text-left label-caps min-w-[160px]">Name</th>
+                  <th scope="col" className="px-4 py-2.5 text-left label-caps min-w-[220px]">Email</th>
+                  <th scope="col" className="px-4 py-2.5 text-left label-caps w-52">Role</th>
+                  <th scope="col" className="px-4 py-2.5 text-left label-caps w-40">Joined</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-stroke">
@@ -227,6 +227,7 @@ export function UsersPage() {
                             value={user.role}
                             onChange={(e) => handleRoleChange(user, e.target.value as UserRole)}
                             disabled={isUpdating}
+                            aria-label={`Change role for ${user.name}`}
                             className="rounded border border-stroke bg-surface-base px-2 py-0.5 text-xs text-ink-muted focus:border-stroke-focus focus:outline-none disabled:opacity-40 cursor-pointer"
                           >
                             {ALL_ROLES.map((r) => (

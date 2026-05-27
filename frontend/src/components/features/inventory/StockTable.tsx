@@ -68,12 +68,14 @@ export function StockTable({ items, sortKey, sortDir, onSort, onRowClick }: Stoc
               {COLS.map((col) => (
                 <th
                   key={col.label}
+                  scope="col"
                   className={cn(
                     'px-3 py-2 text-left label-caps',
                     col.className,
                     col.key && 'cursor-pointer select-none hover:text-ink-dim transition-colors duration-fast'
                   )}
                   onClick={() => col.key && onSort(col.key)}
+                  aria-sort={col.key === sortKey ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
                 >
                   <div className="flex items-center gap-1">
                     <span>{col.label}</span>

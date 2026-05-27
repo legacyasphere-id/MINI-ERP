@@ -56,7 +56,7 @@ export function LoginPage() {
           </div>
 
           {login.isError && (
-            <p className="text-sm text-status-error text-center">
+            <p role="alert" className="text-sm text-status-error text-center">
               Invalid email or password.
             </p>
           )}

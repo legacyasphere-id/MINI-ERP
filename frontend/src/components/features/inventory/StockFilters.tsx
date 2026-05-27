@@ -35,10 +35,11 @@ export function StockFilters({
       <div className="relative w-56">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-muted" aria-hidden />
         <input
-          type="text"
+          type="search"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           placeholder="SKU or name…"
+          aria-label="Search by SKU or name"
           className={cn(
             'h-input w-full rounded border border-stroke bg-surface-base pl-8 pr-3 text-sm text-ink',
             'placeholder:text-ink-muted',
@@ -49,11 +50,12 @@ export function StockFilters({
       </div>
 
       {/* Status tabs */}
-      <div className="flex overflow-hidden rounded border border-stroke">
+      <div role="group" aria-label="Filter by stock status" className="flex overflow-hidden rounded border border-stroke">
         {STATUS_TABS.map((tab) => (
           <button
             key={tab.value}
             onClick={() => onStatus(tab.value)}
+            aria-pressed={status === tab.value}
             className={cn(
               'h-input border-r border-stroke px-3 text-xs font-medium transition-colors duration-fast last:border-r-0',
               status === tab.value
@@ -70,6 +72,7 @@ export function StockFilters({
       <select
         value={category}
         onChange={(e) => onCategory(e.target.value)}
+        aria-label="Filter by category"
         className={cn(
           'h-input rounded border border-stroke bg-surface-card px-3 text-sm text-ink',
           'focus:border-stroke-focus focus:outline-none',

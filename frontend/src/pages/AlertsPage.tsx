@@ -49,8 +49,12 @@ function AlertModal({ alert, onClose, onAcknowledge }: {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={onClose}
+      aria-hidden="true"
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="alert-modal-title"
         className={cn(
           'relative w-full max-w-lg mx-4 rounded border border-stroke bg-surface-card shadow-2xl',
           'border-l-4', cfg.borderL
@@ -61,7 +65,7 @@ function AlertModal({ alert, onClose, onAcknowledge }: {
         <div className="flex items-center justify-between border-b border-stroke px-5 py-3">
           <div className="flex items-center gap-2">
             <div className={cn('h-2 w-2 rounded-full', cfg.dot)} />
-            <span className={cn('text-xs font-semibold tracking-wide', cfg.text)}>
+            <span id="alert-modal-title" className={cn('text-xs font-semibold tracking-wide', cfg.text)}>
               {cfg.label}
             </span>
             <span className="text-xs text-ink-muted">·</span>

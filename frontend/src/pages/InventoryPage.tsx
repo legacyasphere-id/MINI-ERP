@@ -164,6 +164,7 @@ export function InventoryPage() {
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
+                  aria-label="Previous page"
                   className={cn(
                     'h-input px-3 rounded border border-stroke text-xs transition-colors duration-fast',
                     page <= 1
@@ -176,6 +177,7 @@ export function InventoryPage() {
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
+                  aria-label="Next page"
                   className={cn(
                     'h-input px-3 rounded border border-stroke text-xs transition-colors duration-fast',
                     page >= totalPages
