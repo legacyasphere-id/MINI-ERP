@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAlertsStore } from '@/store/alerts.store';
 import { SkeletonList } from '@/components/SkeletonLoader';
 import { EmptyState } from '@/components/EmptyState';
+import { useToast } from '@/lib/toast';
 import { CheckCircle2, History } from 'lucide-react';
 import { relTime } from '@/lib/dates';
 import { cn } from '@/lib/cn';
@@ -174,12 +175,15 @@ export function AlertsPage() {
 
   const displayed = tab === 'active' ? active : history;
 
+  const toast = useToast();
+
   const handleAcknowledge = useCallback(
     (id: string) => {
       acknowledge(id, CURRENT_OPERATOR);
       setSelected(null);
+      toast.success('Alert acknowledged');
     },
-    [acknowledge]
+    [acknowledge, toast]
   );
 
   const handleClose = useCallback(() => setSelected(null), []);

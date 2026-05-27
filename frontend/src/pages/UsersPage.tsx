@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/cn';
 import { relTime } from '@/lib/dates';
 import { usersApi } from '@/services/users.service';
+import { useToast } from '@/lib/toast';
 import type { User, UserRole } from '@/types/user.types';
 
 const ROLE_CFG: Record<UserRole, { label: string; cls: string; bg: string }> = {
@@ -29,6 +30,7 @@ function InviteModal({
   const [form, setForm]     = useState({ name: '', email: '', role: 'STAFF' as UserRole, password: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState('');
+  const toast = useToast();
 
   function reset() {
     setForm({ name: '', email: '', role: 'STAFF', password: '' });
@@ -51,6 +53,7 @@ function InviteModal({
     try {
       const res = await usersApi.create(form);
       onCreated(res.data);
+      toast.success('User created');
       reset();
       onClose();
     } catch (err: unknown) {
@@ -144,6 +147,7 @@ export function UsersPage() {
   const [loading,      setLoading]      = useState(true);
   const [modal,        setModal]        = useState(false);
   const [roleUpdating, setRoleUpdating] = useState<string | null>(null);
+  const toast = useToast();
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -164,8 +168,9 @@ export function UsersPage() {
     try {
       const res = await usersApi.updateRole(user.id, role);
       setUsers((prev) => prev.map((u) => u.id === user.id ? res.data : u));
+      toast.success(`Role updated to ${ROLE_CFG[role].label}`);
     } catch {
-      // silent — role reverts visually since state unchanged
+      toast.error('Failed to update role');
     } finally {
       setRoleUpdating(null);
     }

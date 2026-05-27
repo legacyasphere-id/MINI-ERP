@@ -3,6 +3,8 @@ import { Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { settingsApi, type AppSettings } from '@/services/settings.service';
+import { useToast } from '@/lib/toast';
+
 
 const TIMEZONES = ['UTC', 'America/New_York', 'America/Los_Angeles', 'Europe/London', 'Europe/Berlin', 'Asia/Singapore', 'Asia/Tokyo', 'Australia/Sydney'];
 const CURRENCIES = [
@@ -22,6 +24,7 @@ export function SettingsPage() {
   const [saving,  setSaving]  = useState(false);
   const [saved,   setSaved]   = useState(false);
   const [error,   setError]   = useState('');
+  const toast = useToast();
 
   useEffect(() => {
     settingsApi.get()
@@ -44,9 +47,11 @@ export function SettingsPage() {
       const res = await settingsApi.update(form);
       setForm(res.data);
       setSaved(true);
+      toast.success('Settings saved');
       setTimeout(() => setSaved(false), 3000);
     } catch {
       setError('Failed to save settings.');
+      toast.error('Failed to save settings.');
     } finally {
       setSaving(false);
     }
