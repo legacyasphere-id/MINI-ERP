@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type RequestHandler } from 'express';
 import { authRouter }      from './auth.routes';
 import { productsRouter }  from './products.routes';
 import { usersRouter }     from './users.routes';
@@ -16,7 +16,7 @@ export const router = Router();
 router.use('/auth', authRouter);
 
 // Protected — valid JWT required for everything below
-router.use(authenticate as any);
+router.use(authenticate as RequestHandler);
 router.use('/products',  productsRouter);
 router.use('/users',     usersRouter);
 router.use('/movements', movementsRouter);
