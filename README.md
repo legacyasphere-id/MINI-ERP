@@ -16,8 +16,7 @@ Built as a portfolio project demonstrating production-level full-stack engineeri
 
 ## Preview
 
-<!-- Add a screenshot here -->
-> _Screenshot placeholder — add `/dashboard` or `/inventory` screenshot_
+![InventoryOS Dashboard](docs/screenshot.jpg)
 
 ---
 
