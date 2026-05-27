@@ -5,6 +5,8 @@ import {
   Cell, PieChart, Pie, Legend,
 } from 'recharts';
 import { analyticsApi, type AnalyticsStats } from '@/services/analytics.service';
+import { EmptyState } from '@/components/EmptyState';
+import { BarChart2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
@@ -246,7 +248,7 @@ export function AnalyticsPage() {
         {loading ? (
           <div className="px-5 py-8 text-center text-sm text-ink-muted">Loading…</div>
         ) : stats!.topSKUs.length === 0 ? (
-          <div className="px-5 py-8 text-center text-sm text-ink-muted">No movements recorded yet.</div>
+          <EmptyState icon={BarChart2} title="Not enough data yet" subtitle="Come back after recording some stock movements." />
         ) : (
           <div className="divide-y divide-stroke">
             {stats!.topSKUs.map((item, idx) => {

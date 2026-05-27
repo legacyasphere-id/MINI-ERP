@@ -7,6 +7,7 @@ import { cn } from '@/lib/cn';
 import { suppliersApi, type ApiSupplier } from '@/services/suppliers.service';
 import { ordersApi, type ApiPurchaseOrder } from '@/services/orders.service';
 import { SkeletonTableRows } from '@/components/SkeletonLoader';
+import { EmptyState } from '@/components/EmptyState';
 
 const STATUS_CFG: Record<string, { label: string; cls: string; bg: string }> = {
   draft:     { label: 'Draft',     cls: 'text-ink-muted',    bg: 'bg-surface-hover'  },
@@ -117,9 +118,10 @@ function SupplierPanel({
           </div>
 
           {pos.length === 0 ? (
-            <div className="px-5 py-8 text-center text-sm text-ink-muted">
-              No purchase orders for this supplier.
-            </div>
+            <EmptyState
+              title="No purchase orders for this supplier"
+              subtitle="Orders will appear here once created."
+            />
           ) : (
             <div className="divide-y divide-stroke">
               {pos.map((po) => {

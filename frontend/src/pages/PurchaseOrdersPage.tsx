@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { X } from 'lucide-react';
+import { X, ShoppingCart } from 'lucide-react';
+import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { fmtShortDate } from '@/lib/dates';
@@ -338,9 +339,11 @@ export function PurchaseOrdersPage() {
         ) : error ? (
           <div className="px-4 py-8 text-center text-sm text-status-error">{error}</div>
         ) : filtered.length === 0 ? (
-          <div className="px-4 py-8 text-center text-sm text-ink-muted">
-            No purchase orders in this view.
-          </div>
+          <EmptyState
+            icon={ShoppingCart}
+            title="No purchase orders match this filter"
+            subtitle="Try clearing the status filter or search term."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

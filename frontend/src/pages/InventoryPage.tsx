@@ -6,6 +6,8 @@ import type { StockStatus, StockItem } from '@/types/inventory.types';
 import { StockFilters } from '@/components/features/inventory/StockFilters';
 import { StockTable, type SortKey, type SortDir } from '@/components/features/inventory/StockTable';
 import { SkeletonTableRows } from '@/components/SkeletonLoader';
+import { EmptyState } from '@/components/EmptyState';
+import { Package } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 const LIMIT = 20;
@@ -131,6 +133,16 @@ export function InventoryPage() {
               <SkeletonTableRows rows={5} cols={8} />
             </tbody>
           </table>
+        </div>
+      ) : !loading && items.length === 0 ? (
+        <div className="rounded border border-stroke bg-surface-card">
+          <EmptyState
+            icon={Package}
+            title="No products found"
+            subtitle={debouncedSearch || statusFilter !== 'all' || categoryFilter !== 'all'
+              ? 'No products match the current filters. Try clearing them.'
+              : 'No products yet. Add inventory to get started.'}
+          />
         </div>
       ) : (
         <>

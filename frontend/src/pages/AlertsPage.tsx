@@ -3,6 +3,8 @@ import { X, ChevronRight, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAlertsStore } from '@/store/alerts.store';
 import { SkeletonList } from '@/components/SkeletonLoader';
+import { EmptyState } from '@/components/EmptyState';
+import { CheckCircle2, History } from 'lucide-react';
 import { relTime } from '@/lib/dates';
 import { cn } from '@/lib/cn';
 import type { Alert, AlertSeverity, AlertType } from '@/types/inventory.types';
@@ -230,12 +232,20 @@ export function AlertsPage() {
         {!hydrated ? (
           <SkeletonList rows={5} />
         ) : displayed.length === 0 ? (
-          <div className="rounded border border-stroke bg-surface-card px-4 py-10 text-center">
-            <p className="text-sm text-ink-muted">
-              {tab === 'active'
-                ? 'No active alerts. System nominal.'
-                : 'No acknowledged alerts yet.'}
-            </p>
+          <div className="rounded border border-stroke bg-surface-card">
+            {tab === 'active' ? (
+              <EmptyState
+                icon={CheckCircle2}
+                title="All clear"
+                subtitle="No critical or warning alerts right now. System nominal."
+              />
+            ) : (
+              <EmptyState
+                icon={History}
+                title="No acknowledged alerts yet"
+                subtitle="Acknowledged alerts will appear here for audit reference."
+              />
+            )}
           </div>
         ) : (
           <div className="rounded border border-stroke overflow-hidden">

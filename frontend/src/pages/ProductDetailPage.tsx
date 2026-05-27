@@ -1,6 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ArrowLeftRight, ShoppingCart } from 'lucide-react';
+import { EmptyState } from '@/components/EmptyState';
+import { SkeletonTableRows } from '@/components/SkeletonLoader';
 import { StatusBadge } from '@/components/features/inventory/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { productsApi, type ApiProduct } from '@/services/products.service';
@@ -163,9 +165,9 @@ export function ProductDetailPage() {
             </span>
           </div>
           {movLoading ? (
-            <div className="px-4 py-6 text-center text-sm text-ink-muted">Loading…</div>
+            <table className="w-full text-sm"><tbody><SkeletonTableRows rows={3} cols={4} /></tbody></table>
           ) : movements.length === 0 ? (
-            <div className="px-4 py-6 text-center text-sm text-ink-muted">No movements recorded.</div>
+            <EmptyState icon={ArrowLeftRight} title="No movements recorded" subtitle="Movements will appear here once stock is received, issued, or transferred." />
           ) : (
             <div className="divide-y divide-stroke">
               {movements.map((mov) => {
@@ -209,9 +211,9 @@ export function ProductDetailPage() {
             </span>
           </div>
           {ordLoading ? (
-            <div className="px-4 py-6 text-center text-sm text-ink-muted">Loading…</div>
+            <table className="w-full text-sm"><tbody><SkeletonTableRows rows={3} cols={4} /></tbody></table>
           ) : orders.length === 0 ? (
-            <div className="px-4 py-6 text-center text-sm text-ink-muted">No purchase orders found.</div>
+            <EmptyState icon={ShoppingCart} title="No purchase orders for this SKU" />
           ) : (
             <div className="divide-y divide-stroke">
               {orders.map((po) => {

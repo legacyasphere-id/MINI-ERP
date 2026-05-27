@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { movementsApi, type ApiMovement } from '@/services/movements.service';
 import { productsApi, type ApiProduct } from '@/services/products.service';
 import { SkeletonTableRows } from '@/components/SkeletonLoader';
+import { EmptyState } from '@/components/EmptyState';
+import { ScanLine } from 'lucide-react';
 import { relTime } from '@/lib/dates';
 import { cn } from '@/lib/cn';
 import type { MovementType } from '@/types/inventory.types';
@@ -304,9 +306,11 @@ export function MovementPage() {
             <tbody><SkeletonTableRows rows={5} cols={8} /></tbody>
           </table>
         ) : log.length === 0 ? (
-          <div className="px-4 py-8 text-center text-sm text-ink-muted">
-            No movements yet. Confirm one above.
-          </div>
+          <EmptyState
+            icon={ScanLine}
+            title="No movements recorded yet"
+            subtitle="Start by scanning a SKU barcode in the form above."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
