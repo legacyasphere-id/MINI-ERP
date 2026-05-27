@@ -3,7 +3,7 @@
 A full-stack inventory management system — real database, real auth, real-time stock updates.
 Built as a portfolio project demonstrating production-level full-stack engineering.
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000?logo=vercel&logoColor=white)](https://mini-erp-frontend-tau.vercel.app/inventory)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-000?logo=vercel&logoColor=white)](https://mini-erp-frontend-tau.vercel.app)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![Express](https://img.shields.io/badge/Express-4-000?logo=express&logoColor=white)](https://expressjs.com/)
