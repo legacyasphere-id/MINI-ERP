@@ -20,6 +20,23 @@ Built as a portfolio project demonstrating production-level full-stack engineeri
 
 ---
 
+## Feature Status
+
+| Feature | Status |
+|---------|--------|
+| JWT Authentication | ✅ Live |
+| Stock Movements (receive / issue / transfer / adjust) | ✅ Live |
+| Movement Log (paginated, filterable) | ✅ Live |
+| Purchase Orders (multi-line, receive lifecycle) | ✅ Live |
+| Alerts Center (severity tiers, acknowledgeable) | ✅ Live |
+| Suppliers (directory + linked PO history) | ✅ Live |
+| Analytics (30-day chart, top SKUs, stock health) | ✅ Live |
+| User Management (roles: Admin / Manager / Staff) | ✅ Live |
+| Inventory List (live DB with filters + pagination) | 🔨 In progress |
+| Dashboard KPIs (live from DB) | 🔨 In progress |
+
+---
+
 ## What's Inside
 
 ### Core Features
@@ -114,54 +131,54 @@ npm run dev
 | Frontend  | http://localhost:5173     |
 | Backend   | http://localhost:3001     |
 
-### Available Scripts
-
-| Command                | Description                              |
-|------------------------|------------------------------------------|
-| `npm run dev`          | Start frontend + backend concurrently    |
-| `npm run dev:frontend` | Vite dev server only                     |
-| `npm run dev:backend`  | Express server only (with hot-reload)    |
-| `npm run build`        | Production build (tsc + vite)            |
-| `npm run lint`         | ESLint on both packages                  |
-
 ---
 
 ## API Reference
 
 All endpoints except `/api/auth/login` require `Authorization: Bearer <token>`.
 
-| Method | Path                        | Description                            |
-|--------|-----------------------------|----------------------------------------|
-| POST   | `/api/auth/login`           | Login → returns JWT + user             |
-| GET    | `/api/auth/me`              | Current user from token                |
-| GET    | `/api/products`             | List products (search, status, page)   |
-| GET    | `/api/products/:id`         | Single product with category           |
-| GET    | `/api/products/:id/movements` | Movement history for a SKU           |
-| GET    | `/api/movements`            | Paginated movement log                 |
-| POST   | `/api/movements`            | Record a stock movement                |
-| GET    | `/api/orders`               | Purchase orders (filterable)           |
-| POST   | `/api/orders`               | Create a PO                            |
-| POST   | `/api/orders/:id/receive`   | Receive PO lines                       |
-| GET    | `/api/suppliers`            | Supplier list with linked POs          |
-| GET    | `/api/dashboard/stats`      | KPIs + 30-day chart data               |
-| GET    | `/api/analytics`            | Stock health + top SKUs                |
-| GET    | `/api/settings`             | App settings singleton                 |
-| PUT    | `/api/settings`             | Update settings                        |
-| GET    | `/api/users`                | User list                              |
-| POST   | `/api/users`                | Create user                            |
-| PATCH  | `/api/users/:id/role`       | Update user role                       |
+| Method | Path                          | Description                            |
+|--------|-------------------------------|----------------------------------------|
+| POST   | `/api/auth/login`             | Login → returns JWT + user             |
+| GET    | `/api/auth/me`                | Current user from token                |
+| GET    | `/api/products`               | List products (search, status, page)   |
+| GET    | `/api/products/:id`           | Single product with category           |
+| GET    | `/api/products/:id/movements` | Movement history for a SKU             |
+| GET    | `/api/movements`              | Paginated movement log                 |
+| POST   | `/api/movements`              | Record a stock movement                |
+| GET    | `/api/orders`                 | Purchase orders (filterable)           |
+| POST   | `/api/orders`                 | Create a PO                            |
+| POST   | `/api/orders/:id/receive`     | Receive PO lines                       |
+| GET    | `/api/suppliers`              | Supplier list with linked POs          |
+| GET    | `/api/dashboard/stats`        | KPIs + 30-day chart data               |
+| GET    | `/api/analytics`              | Stock health + top SKUs                |
+| GET    | `/api/settings`               | App settings singleton                 |
+| PUT    | `/api/settings`               | Update settings                        |
+| GET    | `/api/users`                  | User list                              |
+| POST   | `/api/users`                  | Create user                            |
+| PATCH  | `/api/users/:id/role`         | Update user role                       |
 
 ---
 
 ## Deployment Notes
 
-The app is deployed on **Vercel** with the backend as serverless functions and the database on **Supabase PostgreSQL**.
+Deployed on **Vercel** (frontend + serverless API) with database on **Supabase PostgreSQL**.
 
-Key config for Supabase + Vercel:
-- Use the **Session Pooler** URL (port 5432) — Vercel is IPv4-only, Supabase's direct connection is IPv6
-- Add `?pgbouncer=true` is NOT needed for Session Pooler (only Transaction Pooler)
-- `prisma` must be in `dependencies` (not `devDependencies`) so Vercel installs it
+Key config:
+- Use the **Session Pooler** URL (port 5432) — Vercel is IPv4-only
+- `prisma` must be in `dependencies` (not `devDependencies`)
 - Add `"postinstall": "prisma generate"` to `backend/package.json`
+
+---
+
+## Changelog
+
+| Date | What changed |
+|------|--------------|
+| May 27, 2026 | Dashboard screenshot added (desktop crop, no browser chrome) |
+| May 27, 2026 | CI status badge added to README |
+| May 27, 2026 | 20 stock movements seeded across last 30 days for realistic Daily Inbound Value chart |
+| Earlier | Full system shipped: JWT auth, stock movements, purchase orders, alerts, suppliers, analytics, user management |
 
 ---
 
